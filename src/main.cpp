@@ -14,8 +14,8 @@ void setup() {
   WiFi.mode(WIFI_AP_STA);
 
   // Start Access Point
+  WiFi.begin(WIFI_STA_SSID, WIFI_STA_PASSWORD);
   WiFi.softAP(WIFI_AP_SSID, WIFI_AP_PASSWORD);
-
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
   
@@ -34,7 +34,6 @@ void loop() {
       wifi_timeout = millis();
       Serial.println("Retry WiFi...");
       WiFi.disconnect();
-      WiFi.begin(WIFI_STA_SSID, WIFI_STA_PASSWORD);
     }
   }
 }
