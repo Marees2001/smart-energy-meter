@@ -170,7 +170,7 @@ void init_controller() {
   pinMode(BUTTON_PIN, INPUT); // BUTTON - GPIO37
 
    // Initialize I2C for LCD display
-  //Wire.begin(MCU_SDA_PIN, MCU_SCL_PIN);
+  Wire.begin(MCU_SDA_PIN, MCU_SCL_PIN);
 }
 
 void init_lcd() {
@@ -186,6 +186,38 @@ void init_lcd() {
   
   delay(2000);
   lcd.clear();
+}
+
+void wifi_rssi() {
+  long rssi = WiFi.RSSI();
+  if (rssi >= -50) {
+    iemSta.wifi = 3; // Excellent signal
+  } else if (rssi >= -70) {
+    iemSta.wifi = 2; // Good signal
+  } else if (rssi >= -80) {
+    iemSta.wifi = 1; // Weak signal
+  } else {
+    iemSta.wifi = 0; // No signal
+  }
+}
+
+void btt_status() {
+  // Read battery voltage from ADC pin
+  // ESP32 ADC: 12-bit (0-4095), max 3.3V
+  int adc_value = analogRead(BATT_ADC_PIN);
+  // Convert ADC reading to voltage in millivolts
+  // Assuming voltage divider is configured to read up to 4.2V
+  float voltage_mv = (adc_value / 4095.0) * 3300.0 * 1.27; // 1.27 factor for voltage divider correction
+  // Map voltage range 3000mV (0%) to 4200mV (100%) to level 0-3
+  if (voltage_mv <= 3000) {
+    iemSta.btt = 0; // 0%
+  } else if (voltage_mv <= 3400) {
+    iemSta.btt = 1; // ~25%
+  } else if (voltage_mv <= 3800) {
+    iemSta.btt = 2; // ~50%
+  } else {
+    iemSta.btt = 3; // 100%
+  }
 }
 
 #endif // CONTROLLER_H

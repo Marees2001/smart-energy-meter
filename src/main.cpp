@@ -38,6 +38,8 @@ void setup() {
 
 void loop() {
   static unsigned long network_timeout = 0;
+  static unsigned long status_publish_timeout = 0;
+  // Handle incoming HTTP requests
   server.handleClient();
   // put your main code here, to run repeatedly:
   if(millis() - network_timeout > 5000) { // Check every 5 seconds
@@ -75,6 +77,13 @@ void loop() {
     }
   }
 
+  wifi_rssi(); // Update WiFi signal strength in controller status
+  btt_status(); // Update battery status in controller status
+
+  if(millis()-status_publish_timeout > 15000) { // Publish status update every 15 seconds
+    status_publish_timeout = millis();
+    publish_data = STATUS_UPDATE;
+  }
   
   if(network_status == MQTT_CONNECT) {
     mqttClient.loop();
