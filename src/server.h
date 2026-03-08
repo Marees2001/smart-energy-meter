@@ -20,12 +20,14 @@ extern uint8_t publish_data;
 extern ESP32Time rtc;
 
 #define MQTT_BROKER "8c0734829583414dba307feccb737cf7.s1.eu.hivemq.cloud"
-#define MQTT_PORT 8884
+#define MQTT_PORT 8883
+#define MQTT_USERNAME "Marees"
+#define MQTT_PASSWORD "Marees2001"
 #define MQTT_TOPIC "iem/control"
 #define MQTT_SUBSCRIBE "meter/command"
 
-#define WIFI_STA_SSID "realme_swarna"
-#define WIFI_STA_PASSWORD "yatf6856"
+#define WIFI_STA_SSID "Alpha_geek"
+#define WIFI_STA_PASSWORD "Alpha_geek2001"
 #define WIFI_AP_SSID "my_iem"
 #define WIFI_AP_PASSWORD "iem@123456"
 
@@ -37,7 +39,7 @@ extern ESP32Time rtc;
 #define STATUS_UPDATE 1
 #define BILL_UPDATE 2
 
-WiFiClient  espClient;
+WiFiClientSecure espClient;
 WebServer server(80);
 PubSubClient mqttClient(espClient);
 char mqtt_client_id[40];
@@ -45,14 +47,30 @@ uint8_t bill_month = 0; // Variable to track the current billing month (0-11)
 
 static const char *root_ca PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
-MIIDrzCCApegAwIBAgIUQ....
-(Full HiveMQ CA certificate here)
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygch
+77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+0T
+K+fLrR2WSUcLkcwHjBWovW5L5lyXcU1c5KRH+uGJjGzE4O7Ee7zLJXcQXSMkdQi8
+7Oq4rQGTTJvO7R96nvPB3vw2YBVHfPfWK9JCKnTfOQGzYv2P5V+BPXTyKJhGdWD1
+VO4b3ihoKdJVdZ4jZAc8HJUiVY8arjFnAHJibGrM+6/xJV2V4nbtXmW8V6GkwHnP
+nXVTK8C6cPJRG9q4y2j8ZKGKb3xCPTH3HCe2LuG3bjI4rZWHJhJFKG7fBjOxsdxg
+dWGKdD1P9aNyBWgv0U0zDkR1V7wqb1pLZPj4M4sTJ5qX9vfIYGnk4rQJLp4QEo0
+wWLiu1u1pfRy3UpjPJzKlWnvY8AwY3xYqPjWp8OIggDxAdR8ob1U+Lq0cDc7fsI
+8q5X+4L8N+POCzJGt4l8P+6XMGWZA3YpilV8CzNkJBAj+bwqLQb8c5UOqMB3HL5
+VjCnTJCuEPoQBcSyjq6jVqX6B1LwPBZ6GLXL1H5zJ8i0Qm7PgI3fkiEkEOt1l6Q
+0Qd5kYFp0XC1R1tWLWG+kHlB3TKr+XcEoI4jUq7Kg9gTJxV7HNRUoqK6zE7j8h4
+K7B3c9QECBGxWXB9KvqTzK2ZG6QB8NTGjEi
 -----END CERTIFICATE-----
 )EOF";
 
+
 // Server definitions and declarations go here
 void wifi_init(void) {
-    Serial.println("Controller Starting...\r\n");
+    Serial.println("Controller wifi Starting...\r\n");
     WiFi.mode(WIFI_AP_STA);
 
     // Start Access Point
@@ -80,8 +98,8 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
 }
 
 void mqtt_init() {
-    //espClient.setInsecure();   // skip certificate validation
-    //espClient.setCACert(root_ca);
+    espClient.setInsecure();   // skip certificate validation (temporary for testing)
+    // espClient.setCACert(root_ca);
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
     mqttClient.setCallback(mqtt_callback);
 }
@@ -91,7 +109,7 @@ void mqttConnect() {
   sprintf(mqtt_client_id, "IEM_%s", WiFi.macAddress().c_str());
   Serial.println("MQTT client ID: ");
   Serial.println(mqtt_client_id);
-  if (mqttClient.connect(mqtt_client_id,"Marees","Marees2001")) {
+  if (mqttClient.connect(mqtt_client_id,MQTT_USERNAME,MQTT_PASSWORD)) {
     Serial.println("MQTT Connected");
     mqttClient.subscribe(MQTT_SUBSCRIBE);
     //mqttClient.publish(MQTT_TOPIC,"Device Online");
@@ -207,8 +225,11 @@ void handle_wifi_Save() {
 }
 
 void setup_server() {
+  Serial.println("Setting up server...");
+  server.on("/", [](){ server.send(200, "text/plain", "ESP32 Server Running"); });
   server.on("/wifi", http_handle_wifi);
   server.on("/wifi/save", handle_wifi_Save);
   server.begin();
+  Serial.println("Server started");
 }
 #endif // SERVER_H  

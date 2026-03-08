@@ -52,7 +52,7 @@ button{
 
 <h2>ESP32S3 WiFi Setup</h2>
 
-<form action="/save" method="POST">
+<form action="/wifi/save" method="POST">
 
 <input type="text" name="ssid" placeholder="WiFi SSID">
 

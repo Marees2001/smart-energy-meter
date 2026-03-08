@@ -114,6 +114,7 @@ struct CONTROLLER_BILL {
 };
 
 void init_controller() {
+  Serial.println("Controller init...\r\n");
   // Initialize controller status
   // iemSta.status = 0; // Active
   // iemSta.btt = 0; // 0% battery
@@ -169,7 +170,7 @@ void init_controller() {
   pinMode(BUTTON_PIN, INPUT); // BUTTON - GPIO37
 
    // Initialize I2C for LCD display
- // Wire.begin(MCU_SDA_PIN, MCU_SCL_PIN);
+  //Wire.begin(MCU_SDA_PIN, MCU_SCL_PIN);
 }
 
 void init_lcd() {

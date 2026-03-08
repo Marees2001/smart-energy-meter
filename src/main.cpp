@@ -25,8 +25,6 @@ void setup() {
   Serial.begin(115200);
     
   // Initialize controller bill with sample values
-  iemConf.net.ssid = WIFI_STA_SSID;
-  iemConf.net.password = WIFI_STA_PASSWORD;
   //initialize the controller status, settings, and operation
   init_controller();
   // Initialize LCD display
