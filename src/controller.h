@@ -8,6 +8,7 @@
 #include <Preferences.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include "ZMPT101B.h"
 
 #define MCU_SDA_PIN 21
 #define MCU_SCL_PIN 22
@@ -27,8 +28,14 @@
 #define LCD_COLS 16    // LCD display columns
 #define LCD_ROWS 4     // LCD display rows
 
+#define POWER_FACTOR 0.8 // Power factor for energy calculation
+#define CALIBRATION_FACTOR 30.0 // Example calibration factor for current sensor
+
 // Forward declaration of LCD object
 extern LiquidCrystal_I2C lcd;
+ZMPT101B ry_voltSens(PHASE1_ADC_PIN);
+ZMPT101B yb_voltSens(PHASE2_ADC_PIN);
+ZMPT101B br_voltSens(PHASE3_ADC_PIN);
 
 extern struct CONTROLLER_STATUS iemSta;
 extern struct CONTROLLER_SETTINGS iemConf;
@@ -111,6 +118,18 @@ struct CONTROLLER_BILL {
   float fix; // Fixed charge
   float tax; // Tax
   float total; // Total amount
+};
+
+/*Structure definition for power calculation*/
+struct POWER_CALCULATION {
+  float ry_power; // Power for RY phase
+  float yb_power; // Power for YB phase
+  float br_power; // Power for BR phase
+  long ry_load_hours; // Load hours for RY phase
+  long yb_load_hours; // Load hours for YB phase
+  long br_load_hours; // Load hours for BR phase
+  uint8_t bill_month; // Month for billing
+  uint8_t bill_type; // Segment for billing (e.g., 1->home, 2->commercial, 3->industrial)
 };
 
 void init_controller() {
@@ -220,4 +239,30 @@ void btt_status() {
   }
 }
 
+void adc_read_voltages() {
+  // Read voltages from ADC pins and update iemSta
+  iemSta.ry_voltage = ry_voltSens.getRmsVoltage(10); // Average of 10 readings for better accuracy
+  iemSta.yb_voltage = yb_voltSens.getRmsVoltage(10); // Average of 10 readings for better accuracy
+  iemSta.br_voltage = br_voltSens.getRmsVoltage(10); // Average of 10 readings for better accuracy
+}
+
+float get_current(uint8_t adc_pin) {
+  int sum = 0;
+  for(int i = 0; i < 500; i++) {
+    int adc = analogRead(adc_pin);
+    float voltage = (adc / 4095.0) * 3.3; // Convert ADC value to voltage
+    float centered = voltage - (3.3/2); // remove DC offset
+    sum += centered * centered;
+  }
+  float rmsVoltage = sqrt(sum / 500); // Calculate RMS voltage
+  float current = rmsVoltage * CALIBRATION_FACTOR; // Convert voltage to current using calibration factor
+  return current;
+}
+
+void adc_read_currents() {
+  // Read currents from ADC pins and update iemSta
+  iemSta.c1_current = get_current(CURRENT1_ADC_PIN);
+  iemSta.c2_current = get_current(CURRENT2_ADC_PIN);
+  iemSta.c3_current = get_current(CURRENT3_ADC_PIN);
+}
 #endif // CONTROLLER_H
