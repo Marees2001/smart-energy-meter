@@ -5,6 +5,9 @@
 #include "controller.h"
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <WiFiClientSecure.h>
+#include <WebServer.h>
+#include <html.h>
 
 extern struct CONTROLLER_STATUS iemSta;
 extern struct CONTROLLER_SETTINGS iemConf;
@@ -21,8 +24,8 @@ extern ESP32Time rtc;
 #define MQTT_TOPIC "iem/control"
 #define MQTT_SUBSCRIBE "meter/command"
 
-#define WIFI_STA_SSID "VARSHA F1 2G"
-#define WIFI_STA_PASSWORD "123456"
+#define WIFI_STA_SSID "realme_swarna"
+#define WIFI_STA_PASSWORD "yatf6856"
 #define WIFI_AP_SSID "my_iem"
 #define WIFI_AP_PASSWORD "iem@123456"
 
@@ -34,10 +37,18 @@ extern ESP32Time rtc;
 #define STATUS_UPDATE 1
 #define BILL_UPDATE 2
 
-WiFiClient espClient;
+WiFiClient  espClient;
+WebServer server(80);
 PubSubClient mqttClient(espClient);
-char* mqtt_client_id;
+char mqtt_client_id[40];
 uint8_t bill_month = 0; // Variable to track the current billing month (0-11)
+
+static const char *root_ca PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIDrzCCApegAwIBAgIUQ....
+(Full HiveMQ CA certificate here)
+-----END CERTIFICATE-----
+)EOF";
 
 // Server definitions and declarations go here
 void wifi_init(void) {
@@ -69,28 +80,33 @@ void mqtt_callback(char* topic, byte* payload, unsigned int length) {
 }
 
 void mqtt_init() {
+    //espClient.setInsecure();   // skip certificate validation
+    //espClient.setCACert(root_ca);
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
     mqttClient.setCallback(mqtt_callback);
 }
 
 void mqttConnect() {
   Serial.println("Connecting MQTT...");
-  sprintf(mqtt_client_id, "IEM_%s", WiFi.macAddress());
+  sprintf(mqtt_client_id, "IEM_%s", WiFi.macAddress().c_str());
   Serial.println("MQTT client ID: ");
   Serial.println(mqtt_client_id);
-  if (mqttClient.connect(mqtt_client_id)) {
+  if (mqttClient.connect(mqtt_client_id,"Marees","Marees2001")) {
     Serial.println("MQTT Connected");
     mqttClient.subscribe(MQTT_SUBSCRIBE);
     //mqttClient.publish(MQTT_TOPIC,"Device Online");
     network_status = MQTT_CONNECT;
     publish_data = STATUS_UPDATE; // Set to publish status update on next loop iteration
+  }else {
+    Serial.print("MQTT failed, rc=");
+    Serial.println(mqttClient.state());
   }
 }
 
 void receive_data_from_mqtt() {
     if (mqtt_received) {
         // Parse the received MQTT message and update controller settings
-        StaticJsonDocument<300> doc;
+        JsonDocument doc;
         DeserializationError error = deserializeJson(doc, receive_buffer);
         if (error) {
             Serial.print("deserializeJson() failed: ");
@@ -98,15 +114,15 @@ void receive_data_from_mqtt() {
             return;
         }
         // Assuming the JSON has fields corresponding to CONTROLLER_SETTINGS
-        if(doc.containsKey("method") && doc["method"] == "opt") {
-            JsonObject params = doc["param"].as<JsonObject>();
-            if(params.containsKey("s1")) iemOpt.rl1_opt = params["s1"];
-            if(params.containsKey("s2")) iemOpt.rl2_opt = params["s2"];
-            if(params.containsKey("s3")) iemOpt.rl3_opt = params["s3"];
+        if (!doc["method"].isNull() && doc["method"] == "opt") {
+            JsonObject params = doc["param"];
+            if (!params["s1"].isNull()) iemOpt.rl1_opt = params["s1"];
+            if (!params["s2"].isNull()) iemOpt.rl2_opt = params["s2"];
+            if (!params["s3"].isNull()) iemOpt.rl3_opt = params["s3"];
         }
-        else if(doc.containsKey("method") && doc["method"] == "getBill") {
-            JsonObject params = doc["param"].as<JsonObject>();
-            if(params.containsKey("month")) {
+        else if (!doc["method"].isNull() && doc["method"] == "getBill") {
+            JsonObject params = doc["param"];
+            if (!params["month"].isNull()) {
                 bill_month = params["month"]; // Assuming month is 1-12 in the JSON, convert to 0-11 for array index
                 bill_month = bill_month - 1; // Convert to 0-based index
                 if(bill_month > 11) bill_month = 11; // Ensure month is within 0-11
@@ -120,26 +136,26 @@ void receive_data_from_mqtt() {
 
 void publish_data_to_mqtt(uint8_t type) {
     // Create a JSON document to hold the data
-    StaticJsonDocument<300> doc;
+    JsonDocument doc;
     switch (type) {
     case STATUS_UPDATE: {
         doc["method"] = "status";
-        JsonObject param = doc.createNestedObject("param");
+        JsonObject param = doc["param"].to<JsonObject>();
         param["sync"] = rtc.getEpoch(); // You might want to use millis() or a proper timestamp
-        JsonObject dev = param.createNestedObject("dev");
+        JsonObject dev = param["dev"].to<JsonObject>();
         dev["nm"] = "My Energy Meter";
         dev["sta"] = iemSta.status ? 0 : 1; // Assuming 1 for active, 0 for offline, but JSON has 1
         dev["wifi"] = iemSta.wifi;
         dev["btt"] = iemSta.btt;
-        JsonObject l1 = param.createNestedObject("l1");
+        JsonObject l1 = param["l1"].to<JsonObject>();
         l1["sta"] = iemSta.rl1_status ? 1 : 0;
         l1["v"] = iemSta.ry_voltage;
         l1["A"] = iemSta.c1_current;
-        JsonObject l2 = param.createNestedObject("l2");
+        JsonObject l2 = param["l2"].to<JsonObject>();
         l2["sta"] = iemSta.rl2_status ? 1 : 0;
         l2["v"] = iemSta.yb_voltage;
         l2["A"] = iemSta.c2_current;
-        JsonObject l3 = param.createNestedObject("l3");
+        JsonObject l3 = param["l3"].to<JsonObject>();
         l3["sta"] = iemSta.rl3_status ? 1 : 0;
         l3["v"] = iemSta.br_voltage;
         l3["A"] = iemSta.c3_current;
@@ -148,7 +164,7 @@ void publish_data_to_mqtt(uint8_t type) {
     }
     case BILL_UPDATE: {
         doc["method"] = "billSta";
-        JsonObject param = doc.createNestedObject("param");
+        JsonObject param = doc["param"].to<JsonObject>();
         param["nm"] = iemBill[bill_month].nm;
         param["Cn"] = iemBill[bill_month].Cn;
         param["unit"] = iemBill[bill_month].unit;
@@ -172,4 +188,27 @@ void publish_data_to_mqtt(uint8_t type) {
     doc.clear(); // Clear the document after publishing
 }
 
+
+void http_handle_wifi(){
+    Serial.println("WiFi page requested");
+    server.send(200, "text/html", wifi_page);
+}
+
+void handle_wifi_Save() {
+  iemConf.net.ssid = server.arg("ssid");
+  iemConf.net.password = server.arg("pass");
+  Serial.println("SSID: " + iemConf.net.ssid);
+  Serial.println("PASS: " + iemConf.net.password);
+  server.send(200,"text/html","<h3>Connecting to WiFi...</h3>");
+  //WiFi.begin(iemConf.net.ssid.c_str(), iemConf.net.password.c_str());
+  write_data_to_nvs("iem_conf", &iemConf, sizeof(iemConf)); // Save the configuration to NVS
+  delay(2000);
+  ESP.restart(); // Restart the ESP to apply the new configuration
+}
+
+void setup_server() {
+  server.on("/wifi", http_handle_wifi);
+  server.on("/wifi/save", handle_wifi_Save);
+  server.begin();
+}
 #endif // SERVER_H  

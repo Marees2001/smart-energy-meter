@@ -22,12 +22,21 @@
 #define RELAY2_PIN 45
 #define RELAY3_PIN 46
 #define BUTTON_PIN 37
-#define LCD_ADDR 0x27  // I2C address for 16x2 LCD display
+
+#define LCD_ADDR 0x27  // I2C address for 16x4 LCD display
 #define LCD_COLS 16    // LCD display columns
-#define LCD_ROWS 2     // LCD display rows
+#define LCD_ROWS 4     // LCD display rows
 
 // Forward declaration of LCD object
 extern LiquidCrystal_I2C lcd;
+
+extern struct CONTROLLER_STATUS iemSta;
+extern struct CONTROLLER_SETTINGS iemConf;
+extern struct CONTROLLER_OPERATION iemOpt;
+extern struct CONTROLLER_BILL iemBill[12];
+
+extern void write_data_to_nvs(const char* key, const void* data, size_t len);
+extern void read_data_from_nvs(const char* key, void* data, size_t len);
 
 /*Structure definition for Controller status*/
 struct CONTROLLER_STATUS {
@@ -106,46 +115,47 @@ struct CONTROLLER_BILL {
 
 void init_controller() {
   // Initialize controller status
-  iemSta.status = 0; // Active
-  iemSta.btt = 0; // 0% battery
-  iemSta.wifi = 0; // 0% WiFi signal
-  iemSta.alm = 0; // No Alarm
-  iemSta.ry_voltage = 0;
-  iemSta.yb_voltage = 0;
-  iemSta.br_voltage = 0;
-  iemSta.c1_current = 0.0;
-  iemSta.c2_current = 0.0;
-  iemSta.c3_current = 0.0;
-  iemSta.rl1_status = false; // OFF
-  iemSta.rl2_status = false; // OFF
-  iemSta.rl3_status = false; // OFF
+  // iemSta.status = 0; // Active
+  // iemSta.btt = 0; // 0% battery
+  // iemSta.wifi = 0; // 0% WiFi signal
+  // iemSta.alm = 0; // No Alarm
+  // iemSta.ry_voltage = 0;
+  // iemSta.yb_voltage = 0;
+  // iemSta.br_voltage = 0;
+  // iemSta.c1_current = 0.0;
+  // iemSta.c2_current = 0.0;
+  // iemSta.c3_current = 0.0;
+  // iemSta.rl1_status = false; // OFF
+  // iemSta.rl2_status = false; // OFF
+  // iemSta.rl3_status = false; // OFF
 
-  // Initialize controller settings
-  iemConf.volt.mx_ry_threshold = 240; // Example threshold values
-  iemConf.volt.mx_yb_threshold = 240;
-  iemConf.volt.mx_br_threshold = 240;
-  iemConf.volt.mn_ry_threshold = 180;
-  iemConf.volt.mn_yb_threshold = 180;
-  iemConf.volt.mn_br_threshold = 180;
-  iemConf.curr.mx_c1_threshold = 10.0; // Example threshold values
-  iemConf.curr.mx_c2_threshold = 10.0;
-  iemConf.curr.mx_c3_threshold = 10.0;
-  iemConf.net.ip_addr = "";
+  // // Initialize controller settings
+  // iemConf.volt.mx_ry_threshold = 240; // Example threshold values
+  // iemConf.volt.mx_yb_threshold = 240;
+  // iemConf.volt.mx_br_threshold = 240;
+  // iemConf.volt.mn_ry_threshold = 180;
+  // iemConf.volt.mn_yb_threshold = 180;
+  // iemConf.volt.mn_br_threshold = 180;
+  // iemConf.curr.mx_c1_threshold = 10.0; // Example threshold values
+  // iemConf.curr.mx_c2_threshold = 10.0;
+  // iemConf.curr.mx_c3_threshold = 10.0;
+  // iemConf.net.ip_addr = "";
   
-  // Initialize controller operation
-  iemOpt.rl1_opt = false; // OFF
-  iemOpt.rl2_opt = false; // OFF
-  iemOpt.rl3_opt = false; // OFF
+  // // Initialize controller operation
+  // iemOpt.rl1_opt = false; // OFF
+  // iemOpt.rl2_opt = false; // OFF
+  // iemOpt.rl3_opt = false; // OFF
 
-  // Initialize controller bill
-  for(int i = 0; i < 12; i++) {
-    iemBill[i].nm = "";
-    iemBill[i].Cn = "";
-    iemBill[i].unit = 0;
-    iemBill[i].tariff = 0;
-    iemBill[i].enrg = 0;
-  }
+  // // Initialize controller bill
+  // for(int i = 0; i < 12; i++) {
+  //   iemBill[i].nm = "";
+  //   iemBill[i].Cn = "";
+  //   iemBill[i].unit = 0;
+  //   iemBill[i].tariff = 0;
+  //   iemBill[i].enrg = 0;
+  // }
 
+  read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
   //Initialize the GPIO pins
   // Digital Output Pins (Relays)
   pinMode(RELAY1_PIN, OUTPUT); // RELAY_Y (Line 1) - GPIO38
@@ -159,7 +169,7 @@ void init_controller() {
   pinMode(BUTTON_PIN, INPUT); // BUTTON - GPIO37
 
    // Initialize I2C for LCD display
-  Wire.begin(MCU_SDA_PIN, MCU_SCL_PIN);
+ // Wire.begin(MCU_SDA_PIN, MCU_SCL_PIN);
 }
 
 void init_lcd() {
