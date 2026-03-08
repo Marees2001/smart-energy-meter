@@ -23,7 +23,7 @@ extern ESP32Time rtc;
 #define MQTT_PORT 8883
 #define MQTT_USERNAME "Marees"
 #define MQTT_PASSWORD "Marees2001"
-#define MQTT_TOPIC "iem/control"
+#define MQTT_TOPIC "meter/status"
 #define MQTT_SUBSCRIBE "meter/command"
 
 #define WIFI_STA_SSID "Alpha_geek"
