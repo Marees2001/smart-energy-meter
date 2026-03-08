@@ -9,7 +9,7 @@ struct CONTROLLER_BILL iemBill[12];
 
 Preferences pref;
 ESP32Time rtc; // Create an instance of the ESP32Time class to manage time functions
-LiquidCrystal_I2C lcd(0x27, 16, 4); // I2C LCD display at address 0x27, 16 columns, 4 rows
+LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS); // I2C LCD display at address 0x27, 16 columns, 4 rows
 
 char receive_buffer[200]; // Buffer to hold incoming MQTT messages
 bool mqtt_received = false; // Flag to indicate if a new MQTT message has been received
@@ -30,14 +30,17 @@ void setup() {
   //initialize the controller status, settings, and operation
   init_controller();
   // Initialize LCD display
-  init_lcd();
+  //init_lcd();
   // Initialize WiFi and MQTT
   wifi_init();
+  // Setup HTTP server for WiFi configuration & Settings
+  setup_server();
   
 }
 
 void loop() {
   static unsigned long network_timeout = 0;
+  server.handleClient();
   // put your main code here, to run repeatedly:
   if(millis() - network_timeout > 5000) { // Check every 5 seconds
     network_timeout = millis();
@@ -46,7 +49,9 @@ void loop() {
       Serial.print("IP: ");
       Serial.println(WiFi.localIP());
       //NTP time synchronization can be added here if needed
-      configTime(19800, 0, "pool.ntp.org"); // Configure NTP with no timezone offset and no daylight saving time
+      configTime(0, 0, "pool.ntp.org","time.nist.gov"); // Configure NTP with no timezone offset and no daylight saving time
+      setenv("TZ", "IST-5:30:00", 1);
+      tzset();
       struct tm timeinfo;
       if(getLocalTime(&timeinfo)) { // Synchronize time with NTP server
         rtc.setTime(timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec,
