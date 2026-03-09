@@ -8,6 +8,7 @@
 #include <WiFiClientSecure.h>
 #include <WebServer.h>
 #include <html.h>
+#include <define.h>
 
 extern struct CONTROLLER_STATUS iemSta;
 extern struct CONTROLLER_SETTINGS iemConf;
@@ -19,25 +20,6 @@ extern bool mqtt_received;
 extern uint8_t publish_data;
 extern ESP32Time rtc;
 
-#define MQTT_BROKER "8c0734829583414dba307feccb737cf7.s1.eu.hivemq.cloud"
-#define MQTT_PORT 8883
-#define MQTT_USERNAME "Marees"
-#define MQTT_PASSWORD "Marees2001"
-#define MQTT_TOPIC "meter/status"
-#define MQTT_SUBSCRIBE "meter/command"
-
-#define WIFI_STA_SSID "Alpha_geek"
-#define WIFI_STA_PASSWORD "Alpha_geek2001"
-#define WIFI_AP_SSID "my_iem"
-#define WIFI_AP_PASSWORD "iem@123456"
-
-#define IDLE 0
-#define WIFI_CONNECT 1
-#define MQTT_INIT 2
-#define MQTT_CONNECT 3
-
-#define STATUS_UPDATE 1
-#define BILL_UPDATE 2
 
 WiFiClientSecure espClient;
 WebServer server(80);
@@ -79,8 +61,21 @@ void wifi_init(void) {
     Serial.println(WiFi.softAPIP());
 
     // Connect to WiFi
-    WiFi.begin(WIFI_STA_SSID, WIFI_STA_PASSWORD);
+    WiFi.begin(iemConf.net.ssid, iemConf.net.password);
     WiFi.setAutoReconnect(true);
+}
+
+void wifi_rssi() {
+  long rssi = WiFi.RSSI();
+  if (rssi >= -50) {
+    iemSta.wifi = 3; // Excellent signal
+  } else if (rssi >= -70) {
+    iemSta.wifi = 2; // Good signal
+  } else if (rssi >= -80) {
+    iemSta.wifi = 1; // Weak signal
+  } else {
+    iemSta.wifi = 0; // No signal
+  }
 }
 
 void mqtt_callback(char* topic, byte* payload, unsigned int length) {
@@ -213,15 +208,15 @@ void http_handle_wifi(){
 }
 
 void handle_wifi_Save() {
-  iemConf.net.ssid = server.arg("ssid");
-  iemConf.net.password = server.arg("pass");
-  Serial.println("SSID: " + iemConf.net.ssid);
-  Serial.println("PASS: " + iemConf.net.password);
-  server.send(200,"text/html","<h3>Connecting to WiFi...</h3>");
-  //WiFi.begin(iemConf.net.ssid.c_str(), iemConf.net.password.c_str());
-  write_data_to_nvs("iem_conf", &iemConf, sizeof(iemConf)); // Save the configuration to NVS
-  delay(2000);
-  ESP.restart(); // Restart the ESP to apply the new configuration
+    strcpy(iemConf.net.ssid, server.arg("ssid").c_str());
+    strcpy(iemConf.net.password, server.arg("pass").c_str());
+    Serial.println("SSID: " + String(iemConf.net.ssid));
+    Serial.println("PASS: " + String(iemConf.net.password));
+    server.send(200,"text/html","<h3>Connecting to WiFi...</h3>");
+    //WiFi.begin(iemConf.net.ssid.c_str(), iemConf.net.password.c_str());
+    write_data_to_nvs("iem_conf", &iemConf, sizeof(iemConf)); // Save the configuration to NVS
+    delay(2000);
+    ESP.restart(); // Restart the ESP to apply the new configuration
 }
 
 void setup_server() {

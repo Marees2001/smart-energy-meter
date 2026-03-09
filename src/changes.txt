@@ -1,0 +1,20 @@
+# Code Update Timeline for Smart Energy Meter Project
+# File: src/main.cpp
+# This file documents the timeline of code updates with notes for each change.
+
+## Timeline of Updates
+
+### 2026-03-XX (Initial Implementation)
+- **Power Calculation Logic**: Implemented with hysteresis to reduce noise. Calculated instantaneous power for each phase (RY, YB, BR) using P = V * I * PF. Updated power values only if change > 1 watt, accumulated load hours per phase. Energy calculated as sum of (power * load_hours) in Wh, converted to kWh. Bill calculation included fixed charge, tariff, and tax with special case for bill_type == 1.
+- **Other Features**: Network management (WiFi/MQTT), voltage/current reading, status publishing.
+
+### 2026-03-XX (Simplification Update)
+- **Power Calculation Refactor**: Simplified the power calculation to remove hysteresis and per-phase load hours. Now directly computes phase powers, sums to total_power, calculates energy increment as (total_power * interval_seconds) / 3600 in Wh, converts to kWh, and accumulates monthly energy. Bill calculation updated to total = fix + (tariff * enrg) + tax, with condition for bill_type != 1 or enrg > 100 kWh.
+- **Constants**: Introduced POWER_CALCULATION_INTERVAL for the calculation period.
+
+### 2026-03-XX (Documentation Update)
+- **Comments Added**: Added detailed comment block above the power calculation section explaining the logic, variables, and notes on adjustments.
+
+## Notes
+- All updates maintain compatibility with existing structures defined in controller.h.
+- Future updates should be logged here with date and description.

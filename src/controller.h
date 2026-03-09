@@ -9,27 +9,7 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "ZMPT101B.h"
-
-#define MCU_SDA_PIN 21
-#define MCU_SCL_PIN 22
-#define BATT_ADC_PIN 34
-#define PHASE1_ADC_PIN 39
-#define PHASE2_ADC_PIN 36
-#define PHASE3_ADC_PIN 35
-#define CURRENT1_ADC_PIN 32
-#define CURRENT2_ADC_PIN 33
-#define CURRENT3_ADC_PIN 25
-#define RELAY1_PIN 38
-#define RELAY2_PIN 45
-#define RELAY3_PIN 46
-#define BUTTON_PIN 37
-
-#define LCD_ADDR 0x27  // I2C address for 16x4 LCD display
-#define LCD_COLS 16    // LCD display columns
-#define LCD_ROWS 4     // LCD display rows
-
-#define POWER_FACTOR 0.8 // Power factor for energy calculation
-#define CALIBRATION_FACTOR 30.0 // Example calibration factor for current sensor
+#include <define.h>
 
 // Forward declaration of LCD object
 extern LiquidCrystal_I2C lcd;
@@ -41,6 +21,9 @@ extern struct CONTROLLER_STATUS iemSta;
 extern struct CONTROLLER_SETTINGS iemConf;
 extern struct CONTROLLER_OPERATION iemOpt;
 extern struct CONTROLLER_BILL iemBill[12];
+extern struct POWER_CALCULATION iemPwr;
+
+extern uint8_t publish_data;
 
 extern void write_data_to_nvs(const char* key, const void* data, size_t len);
 extern void read_data_from_nvs(const char* key, void* data, size_t len);
@@ -86,15 +69,15 @@ struct CURRENT_SETTINGS {
 /*Structure definition for network settings*/
 struct NETWORK_SETTINGS {
   // Add any necessary member variables here
-  String ssid;
-  String password;
+  char ssid[32]; // WiFi SSID (max 31 characters + null terminator)
+  char password[64]; // WiFi Password (max 63 characters + null terminator
   String ip_addr;
-
 };
 
 /*Structure definition for Controller settings*/
 struct CONTROLLER_SETTINGS {
   // Add any necessary member variables here
+  float version; // Firmware version
   VOLTAGE_SETTINGS volt;
   CURRENT_SETTINGS curr;
   NETWORK_SETTINGS net;
@@ -135,47 +118,62 @@ struct POWER_CALCULATION {
 void init_controller() {
   Serial.println("Controller init...\r\n");
   // Initialize controller status
-  // iemSta.status = 0; // Active
-  // iemSta.btt = 0; // 0% battery
-  // iemSta.wifi = 0; // 0% WiFi signal
-  // iemSta.alm = 0; // No Alarm
-  // iemSta.ry_voltage = 0;
-  // iemSta.yb_voltage = 0;
-  // iemSta.br_voltage = 0;
-  // iemSta.c1_current = 0.0;
-  // iemSta.c2_current = 0.0;
-  // iemSta.c3_current = 0.0;
-  // iemSta.rl1_status = false; // OFF
-  // iemSta.rl2_status = false; // OFF
-  // iemSta.rl3_status = false; // OFF
-
-  // // Initialize controller settings
-  // iemConf.volt.mx_ry_threshold = 240; // Example threshold values
-  // iemConf.volt.mx_yb_threshold = 240;
-  // iemConf.volt.mx_br_threshold = 240;
-  // iemConf.volt.mn_ry_threshold = 180;
-  // iemConf.volt.mn_yb_threshold = 180;
-  // iemConf.volt.mn_br_threshold = 180;
-  // iemConf.curr.mx_c1_threshold = 10.0; // Example threshold values
-  // iemConf.curr.mx_c2_threshold = 10.0;
-  // iemConf.curr.mx_c3_threshold = 10.0;
-  // iemConf.net.ip_addr = "";
-  
-  // // Initialize controller operation
-  // iemOpt.rl1_opt = false; // OFF
-  // iemOpt.rl2_opt = false; // OFF
-  // iemOpt.rl3_opt = false; // OFF
-
-  // // Initialize controller bill
-  // for(int i = 0; i < 12; i++) {
-  //   iemBill[i].nm = "";
-  //   iemBill[i].Cn = "";
-  //   iemBill[i].unit = 0;
-  //   iemBill[i].tariff = 0;
-  //   iemBill[i].enrg = 0;
-  // }
-
   read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
+  if(iemConf.version != FIRMWARE_VERSION) { // Check if the version matches expected value
+    Serial.println("No valid configuration found in NVS, initializing with default values.");
+    iemSta.status = 0; // Active
+    iemSta.btt = 0; // 0% battery
+    iemSta.wifi = 0; // 0% WiFi signal
+    iemSta.alm = 0; // No Alarm
+    iemSta.ry_voltage = 0;
+    iemSta.yb_voltage = 0;
+    iemSta.br_voltage = 0;
+    iemSta.c1_current = 0.0;
+    iemSta.c2_current = 0.0;
+    iemSta.c3_current = 0.0;
+    iemSta.rl1_status = false; // OFF
+    iemSta.rl2_status = false; // OFF
+    iemSta.rl3_status = false; // OFF
+
+    // Initialize controller settings
+    iemConf.version = FIRMWARE_VERSION; // Set version to indicate valid configuration
+    iemConf.volt.mx_ry_threshold = 240; // Example threshold values
+    iemConf.volt.mx_yb_threshold = 240;
+    iemConf.volt.mx_br_threshold = 240;
+    iemConf.volt.mn_ry_threshold = 180;
+    iemConf.volt.mn_yb_threshold = 180;
+    iemConf.volt.mn_br_threshold = 180;
+    iemConf.curr.mx_c1_threshold = 5.0; // Example threshold values
+    iemConf.curr.mx_c2_threshold = 5.0;
+    iemConf.curr.mx_c3_threshold = 5.0;
+    strcpy(iemConf.net.ssid, DEFAULT_WIFI_STA_SSID);
+    strcpy(iemConf.net.password, DEFAULT_WIFI_STA_PASSWORD);
+    
+    // Initialize controller operation
+    iemOpt.rl1_opt = false; // OFF
+    iemOpt.rl2_opt = false; // OFF
+    iemOpt.rl3_opt = false; // OFF
+
+    // Initialize controller bill
+    for(int i = 0; i < 12; i++) {
+      iemBill[i].nm = "";
+      iemBill[i].Cn = "";
+      iemBill[i].unit = 0;
+      iemBill[i].tariff = 0;
+      iemBill[i].enrg = 0;
+      iemBill[i].fix = 0;
+      iemBill[i].tax = 0;
+      iemBill[i].total = 0;
+    }
+    write_data_to_nvs("iem_conf", &iemConf, sizeof(iemConf)); // Save the default configuration to NVS
+    write_data_to_nvs("iem_bill", iemBill, sizeof(iemBill)); // Save the default bill data to NVS
+    write_data_to_nvs("iem_pwr", &iemPwr, sizeof(iemPwr)); // Save the default power calculation data to NVS
+  } else {
+    Serial.println("Valid configuration found in NVS, loading...");
+    read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
+    read_data_from_nvs("iem_bill", iemBill, sizeof(iemBill));
+    read_data_from_nvs("iem_pwr", &iemPwr, sizeof(iemPwr));
+  }
   //Initialize the GPIO pins
   // Digital Output Pins (Relays)
   pinMode(RELAY1_PIN, OUTPUT); // RELAY_Y (Line 1) - GPIO38
@@ -188,8 +186,14 @@ void init_controller() {
   // Digital Input Pins
   pinMode(BUTTON_PIN, INPUT); // BUTTON - GPIO37
 
-   // Initialize I2C for LCD display
+  // Initialize I2C for LCD display
   Wire.begin(MCU_SDA_PIN, MCU_SCL_PIN);
+  //setup button interrupt
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), [](){
+    iemOpt.rl1_opt = LOW; // Toggle relay 1 operation on button press
+    iemOpt.rl2_opt = LOW; // Toggle relay 2 operation on button press
+    iemOpt.rl3_opt = LOW; // Toggle relay 3 operation on button press
+  }, FALLING);
 }
 
 void init_lcd() {
@@ -205,19 +209,6 @@ void init_lcd() {
   
   delay(2000);
   lcd.clear();
-}
-
-void wifi_rssi() {
-  long rssi = WiFi.RSSI();
-  if (rssi >= -50) {
-    iemSta.wifi = 3; // Excellent signal
-  } else if (rssi >= -70) {
-    iemSta.wifi = 2; // Good signal
-  } else if (rssi >= -80) {
-    iemSta.wifi = 1; // Weak signal
-  } else {
-    iemSta.wifi = 0; // No signal
-  }
 }
 
 void btt_status() {
@@ -264,5 +255,79 @@ void adc_read_currents() {
   iemSta.c1_current = get_current(CURRENT1_ADC_PIN);
   iemSta.c2_current = get_current(CURRENT2_ADC_PIN);
   iemSta.c3_current = get_current(CURRENT3_ADC_PIN);
+}
+
+void check_alarms() {
+  // Check RY voltage against thresholds and update alarm status
+  if (iemSta.ry_voltage > iemConf.volt.mx_ry_threshold) {
+    iemSta.alm = 3; // Overvoltage
+    digitalWrite(RELAY1_PIN, HIGH); // Turn ON relay 1 to move NC to NO and disconnect load
+    iemSta.rl1_status = true; // Update relay status in controller status
+    iemOpt.rl1_opt = true; // Update relay operation in controller operation
+    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+  } else if (iemSta.ry_voltage < iemConf.volt.mn_ry_threshold) {
+    iemSta.alm = 4; // Undervoltage
+    digitalWrite(RELAY1_PIN, HIGH); // Turn ON relay 1 to move NC to NO and disconnect load
+    iemSta.rl1_status = true; // Update relay status in controller status
+    iemOpt.rl1_opt = true; // Update relay operation in controller operation
+    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+  }
+
+  // Check YB voltage against thresholds and update alarm status
+  if (iemSta.yb_voltage > iemConf.volt.mx_yb_threshold) {
+    iemSta.alm = 3; // Overvoltage
+    digitalWrite(RELAY2_PIN, HIGH); // Turn ON relay 2 to move NC to NO and disconnect load
+    iemSta.rl2_status = true; // Update relay status in controller status
+    iemOpt.rl2_opt = true; // Update relay operation in controller operation
+    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+  } else if (iemSta.yb_voltage < iemConf.volt.mn_yb_threshold) {
+    iemSta.alm = 4; // Undervoltage
+    digitalWrite(RELAY2_PIN, HIGH); // Turn ON relay 2 to move NC to NO and disconnect load
+    iemSta.rl2_status = true; // Update relay status in controller status
+    iemOpt.rl2_opt = true; // Update relay operation in controller operation
+    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+  }
+
+  // Check BR voltage against thresholds and update alarm status
+  if (iemSta.br_voltage > iemConf.volt.mx_br_threshold) {
+    iemSta.alm = 3; // Overvoltage
+    digitalWrite(RELAY3_PIN, HIGH); // Turn ON relay 3 to move NC to NO and disconnect load
+    iemSta.rl3_status = true; // Update relay status in controller status
+    iemOpt.rl3_opt = true; // Update relay operation in controller operation
+    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+  } else if (iemSta.br_voltage < iemConf.volt.mn_br_threshold) {
+    iemSta.alm = 4; // Undervoltage
+    digitalWrite(RELAY3_PIN, HIGH); // Turn ON relay 3 to move NC to NO and disconnect load
+    iemSta.rl3_status = true; // Update relay status in controller status
+    iemOpt.rl3_opt = true; // Update relay operation in controller operation
+    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+  }
+
+  // Check CT1 current against threshold and update alarm status
+  if (iemSta.c1_current > iemConf.curr.mx_c1_threshold) {
+    iemSta.alm = 2; // Overload
+    digitalWrite(RELAY1_PIN, HIGH); // Turn ON relay 1 to move NC to NO and disconnect load
+    iemSta.rl1_status = true; // Update relay status in controller status
+    iemOpt.rl1_opt = true; // Update relay operation in controller operation
+    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+  }
+
+  // Check CT2 current against threshold and update alarm status
+  if (iemSta.c2_current > iemConf.curr.mx_c2_threshold) {
+    iemSta.alm = 2; // Overload
+    digitalWrite(RELAY2_PIN, HIGH); // Turn ON relay 2 to move NC to NO and disconnect load
+    iemSta.rl2_status = true; // Update relay status in controller status
+    iemOpt.rl2_opt = true; // Update relay operation in controller operation
+    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+  } 
+
+  // Check CT3 current against threshold and update alarm status
+  if (iemSta.c3_current > iemConf.curr.mx_c3_threshold) {
+    iemSta.alm = 2; // Overload
+    digitalWrite(RELAY3_PIN, HIGH); // Turn ON relay 3 to move NC to NO and disconnect load
+    iemSta.rl3_status = true; // Update relay status in controller status
+    iemOpt.rl3_opt = true; // Update relay operation in controller operation
+    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+  }
 }
 #endif // CONTROLLER_H
