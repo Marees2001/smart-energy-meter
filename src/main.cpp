@@ -86,7 +86,7 @@ void loop() {
   }
 
   /*Function to read voltages*/
-  if(millis()-voltage_read_timeout > 10000) { // Read voltages every 10 seconds
+  if(millis()-voltage_read_timeout > 1000) { // Read voltages every 10 seconds
     voltage_read_timeout = millis();
     adc_read_voltages();
     wifi_rssi(); // Update WiFi signal strength in controller status
@@ -102,24 +102,27 @@ void loop() {
   /*function for control relay1 from manual input*/
   if(iemOpt.rl1_opt != iemSta.rl1_status) {
     iemSta.rl1_status = iemOpt.rl1_opt;
+    adc_read_currents(); // Read currents to check if the relay operation was triggered by an overload condition
+    adc_read_voltages(); // Read voltages to check if the relay operation was triggered by an overvoltage or undervoltage condition
     digitalWrite(RELAY1_PIN, iemOpt.rl1_opt ? HIGH : LOW);
     publish_data = STATUS_UPDATE; // Trigger status update after relay state change
   }
   /*function for control relay2 from manual input*/
   if(iemOpt.rl2_opt != iemSta.rl2_status) {
     iemSta.rl2_status = iemOpt.rl2_opt;
+    adc_read_currents(); // Read currents to check if the relay operation was triggered by an overload condition
+    adc_read_voltages(); // Read voltages to check if the relay operation was triggered by an overvoltage or undervoltage condition
     digitalWrite(RELAY2_PIN, iemOpt.rl2_opt ? HIGH : LOW);
     publish_data = STATUS_UPDATE; // Trigger status update after relay state change
   }
   /*function for control relay3 from manual input*/
   if(iemOpt.rl3_opt != iemSta.rl3_status) {
     iemSta.rl3_status = iemOpt.rl3_opt;
+    adc_read_currents(); // Read currents to check if the relay operation was triggered by an overload condition
+    adc_read_voltages(); // Read voltages to check if the relay operation was triggered
     digitalWrite(RELAY3_PIN, iemOpt.rl3_opt ? HIGH : LOW);
     publish_data = STATUS_UPDATE; // Trigger status update after relay state change
   }
-
-  /*Function to check alarms*/
-  check_alarms();
 
   /* ---------------------------------------------------------------
    * Power calculation section
