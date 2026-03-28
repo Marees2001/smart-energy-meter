@@ -121,7 +121,6 @@ void init_controller() {
   read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
   if(iemConf.version != FIRMWARE_VERSION) { // Check if the version matches expected value
     Serial.println("No valid configuration found in NVS, initializing with default values.");
-    iemConf.version = FIRMWARE_VERSION;
     iemSta.status = 0; // Active
     iemSta.btt = 0; // 0% battery
     iemSta.wifi = 0; // 0% WiFi signal
