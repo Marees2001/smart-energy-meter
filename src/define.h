@@ -2,7 +2,7 @@
 #ifndef DEFINE_H
 #define DEFINE_H
 
-#define FIRMWARE_VERSION 1.0
+#define FIRMWARE_VERSION 1.1
 // Pin definitions
 #define MCU_SDA_PIN 8
 #define MCU_SCL_PIN 9
@@ -24,10 +24,10 @@
 // Power calculation constants
 #define POWER_CALCULATION_INTERVAL 5000 // Interval for power calculation in milliseconds
 #define POWER_FACTOR 0.8 // Power factor for energy calculation
-#define CALIBRATION_FACTOR 30.0 // Example calibration factor for current sensor
+#define CALIBRATION_FACTOR 1.0 // Example calibration factor for current sensor
 // WiFi configuration
-#define DEFAULT_WIFI_STA_SSID "Alpha_geek"
-#define DEFAULT_WIFI_STA_PASSWORD "Alpha_geek2001"
+#define DEFAULT_WIFI_STA_SSID "realme_swarna"
+#define DEFAULT_WIFI_STA_PASSWORD "yatf6856"
 // MQTT and WiFi configuration
 #define MQTT_BROKER "8c0734829583414dba307feccb737cf7.s1.eu.hivemq.cloud"
 #define MQTT_PORT 8883
