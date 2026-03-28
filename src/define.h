@@ -4,19 +4,19 @@
 
 #define FIRMWARE_VERSION 1.0
 // Pin definitions
-#define MCU_SDA_PIN 21
-#define MCU_SCL_PIN 22
-#define BATT_ADC_PIN 34
-#define PHASE1_ADC_PIN 39
-#define PHASE2_ADC_PIN 36
-#define PHASE3_ADC_PIN 35
-#define CURRENT1_ADC_PIN 32
-#define CURRENT2_ADC_PIN 33
-#define CURRENT3_ADC_PIN 25
-#define RELAY1_PIN 38
-#define RELAY2_PIN 45
-#define RELAY3_PIN 46
-#define BUTTON_PIN 37
+#define MCU_SDA_PIN 8
+#define MCU_SCL_PIN 9
+#define BATT_ADC_PIN 1
+#define PHASE1_ADC_PIN 2
+#define PHASE2_ADC_PIN 3
+#define PHASE3_ADC_PIN 4
+#define CURRENT1_ADC_PIN 5
+#define CURRENT2_ADC_PIN 6
+#define CURRENT3_ADC_PIN 7
+#define RELAY1_PIN 37
+#define RELAY2_PIN 38
+#define RELAY3_PIN 45
+#define BUTTON_PIN 36
 // MQTT and WiFi configuration
 #define LCD_ADDR 0x27  // I2C address for 16x4 LCD display
 #define LCD_COLS 20    // LCD display columns
