@@ -2,21 +2,21 @@
 #ifndef DEFINE_H
 #define DEFINE_H
 
-#define FIRMWARE_VERSION 1.0
+#define FIRMWARE_VERSION 1.1
 // Pin definitions
-#define MCU_SDA_PIN 21
-#define MCU_SCL_PIN 22
-#define BATT_ADC_PIN 34
-#define PHASE1_ADC_PIN 39
-#define PHASE2_ADC_PIN 36
-#define PHASE3_ADC_PIN 35
-#define CURRENT1_ADC_PIN 32
-#define CURRENT2_ADC_PIN 33
-#define CURRENT3_ADC_PIN 25
-#define RELAY1_PIN 38
-#define RELAY2_PIN 45
-#define RELAY3_PIN 46
-#define BUTTON_PIN 37
+#define MCU_SDA_PIN 8
+#define MCU_SCL_PIN 9
+#define BATT_ADC_PIN 1
+#define PHASE1_ADC_PIN 2
+#define PHASE2_ADC_PIN 3
+#define PHASE3_ADC_PIN 4
+#define CURRENT1_ADC_PIN 5
+#define CURRENT2_ADC_PIN 6
+#define CURRENT3_ADC_PIN 7
+#define RELAY1_PIN 37
+#define RELAY2_PIN 38
+#define RELAY3_PIN 45
+#define BUTTON_PIN 36
 // MQTT and WiFi configuration
 #define LCD_ADDR 0x27  // I2C address for 16x4 LCD display
 #define LCD_COLS 20    // LCD display columns
@@ -24,10 +24,10 @@
 // Power calculation constants
 #define POWER_CALCULATION_INTERVAL 5000 // Interval for power calculation in milliseconds
 #define POWER_FACTOR 0.8 // Power factor for energy calculation
-#define CALIBRATION_FACTOR 30.0 // Example calibration factor for current sensor
+#define CALIBRATION_FACTOR 1.0 // Example calibration factor for current sensor
 // WiFi configuration
-#define DEFAULT_WIFI_STA_SSID "Alpha_geek"
-#define DEFAULT_WIFI_STA_PASSWORD "Alpha_geek2001"
+#define DEFAULT_WIFI_STA_SSID "realme_swarna"
+#define DEFAULT_WIFI_STA_PASSWORD "yatf6856"
 // MQTT and WiFi configuration
 #define MQTT_BROKER "8c0734829583414dba307feccb737cf7.s1.eu.hivemq.cloud"
 #define MQTT_PORT 8883

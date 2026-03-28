@@ -121,6 +121,7 @@ void init_controller() {
   read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
   if(iemConf.version != FIRMWARE_VERSION) { // Check if the version matches expected value
     Serial.println("No valid configuration found in NVS, initializing with default values.");
+    iemConf.version = FIRMWARE_VERSION;
     iemSta.status = 0; // Active
     iemSta.btt = 0; // 0% battery
     iemSta.wifi = 0; // 0% WiFi signal
@@ -236,9 +237,9 @@ void adc_read_voltages() {
   iemSta.yb_voltage = yb_voltSens.getRmsVoltage(10); // Average of 10 readings for better accuracy
   iemSta.br_voltage = br_voltSens.getRmsVoltage(10); // Average of 10 readings for better accuracy
 
-  Serial.print("RY Voltage: "+String(iemSta.ry_voltage)+" V");
-  Serial.print("YB Voltage: "+String(iemSta.yb_voltage)+" V");
-  Serial.print("BR Voltage: "+String(iemSta.br_voltage)+" V");
+  Serial.println("RY Voltage: "+String(iemSta.ry_voltage)+" V");
+  Serial.println("YB Voltage: "+String(iemSta.yb_voltage)+" V");
+  Serial.println("BR Voltage: "+String(iemSta.br_voltage)+" V");
 
   // Check RY voltage against thresholds and update alarm status
   if (iemSta.ry_voltage > iemConf.volt.mx_ry_threshold) {
@@ -287,16 +288,31 @@ void adc_read_voltages() {
 }
 
 float get_current(uint8_t adc_pin) {
-  int sum = 0;
-  for(int i = 0; i < 500; i++) {
-    int adc = analogRead(adc_pin);
-    float voltage = (adc / 4095.0) * 3.3; // Convert ADC value to voltage
-    float centered = voltage - (3.3/2); // remove DC offset
-    sum += centered * centered;
-  }
-  float rmsVoltage = sqrt(sum / 500); // Calculate RMS voltage
-  float current = rmsVoltage * CALIBRATION_FACTOR; // Convert voltage to current using calibration factor
-  return current;
+    float sum = 0.0;
+    float sum_raw = 0.0;
+    float samples[500];
+
+    // Step 1: Collect samples with timing
+    for (int i = 0; i < 500; i++) {
+        samples[i] = (analogRead(adc_pin) / 4095.0) * 3.3;
+        sum_raw += samples[i];
+        delayMicroseconds(100);
+    }
+
+    // Step 2: Compute dynamic DC offset
+    float mean = sum_raw / 500.0;
+
+    // Step 3: Compute RMS of centered signal
+    for (int i = 0; i < 500; i++) {
+        float centered = samples[i] - mean;
+        sum += centered * centered;
+    }
+
+    float rmsVoltage = sqrt(sum / 500.0f);
+
+    // CALIBRATION_FACTOR = turns_ratio / burden_resistor (e.g., 1000 / 150.0)
+    float current = rmsVoltage * CALIBRATION_FACTOR;
+    return current;
 }
 
 void adc_read_currents() {
@@ -305,9 +321,9 @@ void adc_read_currents() {
   iemSta.c2_current = get_current(CURRENT2_ADC_PIN);
   iemSta.c3_current = get_current(CURRENT3_ADC_PIN);
 
-  Serial.print("C1 Current: "+String(iemSta.c1_current)+" A");
-  Serial.print("C2 Current: "+String(iemSta.c2_current)+" A");
-  Serial.print("C3 Current: "+String(iemSta.c3_current)+" A");
+  Serial.println("C1 Current: "+String(iemSta.c1_current)+" A");
+  Serial.println("C2 Current: "+String(iemSta.c2_current)+" A");
+  Serial.println("C3 Current: "+String(iemSta.c3_current)+" A");
 
   // Check CT1 current against threshold and update alarm status
   if (iemSta.c1_current > iemConf.curr.mx_c1_threshold) {
