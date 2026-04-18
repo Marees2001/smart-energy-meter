@@ -115,86 +115,6 @@ struct POWER_CALCULATION {
   uint8_t bill_type; // Segment for billing (e.g., 1->home, 2->commercial, 3->industrial)
 };
 
-void init_controller() {
-  Serial.println("Controller init...\r\n");
-  // Initialize controller status
-  read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
-  if(iemConf.version != FIRMWARE_VERSION) { // Check if the version matches expected value
-    Serial.println("No valid configuration found in NVS, initializing with default values.");
-    iemSta.status = 0; // Active
-    iemSta.btt = 0; // 0% battery
-    iemSta.wifi = 0; // 0% WiFi signal
-    iemSta.alm = 0; // No Alarm
-    iemSta.ry_voltage = 0;
-    iemSta.yb_voltage = 0;
-    iemSta.br_voltage = 0;
-    iemSta.c1_current = 0.0;
-    iemSta.c2_current = 0.0;
-    iemSta.c3_current = 0.0;
-    iemSta.rl1_status = false; // OFF
-    iemSta.rl2_status = false; // OFF
-    iemSta.rl3_status = false; // OFF
-
-    // Initialize controller settings
-    iemConf.version = FIRMWARE_VERSION; // Set version to indicate valid configuration
-    iemConf.volt.mx_ry_threshold = 240; // Example threshold values
-    iemConf.volt.mx_yb_threshold = 240;
-    iemConf.volt.mx_br_threshold = 240;
-    iemConf.volt.mn_ry_threshold = 180;
-    iemConf.volt.mn_yb_threshold = 180;
-    iemConf.volt.mn_br_threshold = 180;
-    iemConf.curr.mx_c1_threshold = 5.0; // Example threshold values
-    iemConf.curr.mx_c2_threshold = 5.0;
-    iemConf.curr.mx_c3_threshold = 5.0;
-    strcpy(iemConf.net.ssid, DEFAULT_WIFI_STA_SSID);
-    strcpy(iemConf.net.password, DEFAULT_WIFI_STA_PASSWORD);
-    
-    // Initialize controller operation
-    iemOpt.rl1_opt = false; // OFF
-    iemOpt.rl2_opt = false; // OFF
-    iemOpt.rl3_opt = false; // OFF
-
-    // Initialize controller bill
-    for(int i = 0; i < 12; i++) {
-      iemBill[i].nm = "";
-      iemBill[i].Cn = "";
-      iemBill[i].unit = 0;
-      iemBill[i].tariff = 0;
-      iemBill[i].enrg = 0;
-      iemBill[i].fix = 0;
-      iemBill[i].tax = 0;
-      iemBill[i].total = 0;
-    }
-    write_data_to_nvs("iem_conf", &iemConf, sizeof(iemConf)); // Save the default configuration to NVS
-    write_data_to_nvs("iem_bill", iemBill, sizeof(iemBill)); // Save the default bill data to NVS
-    write_data_to_nvs("iem_pwr", &iemPwr, sizeof(iemPwr)); // Save the default power calculation data to NVS
-  } else {
-    Serial.println("Valid configuration found in NVS, loading...");
-    read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
-    read_data_from_nvs("iem_bill", iemBill, sizeof(iemBill));
-    read_data_from_nvs("iem_pwr", &iemPwr, sizeof(iemPwr));
-  }
-  //Initialize the GPIO pins
-  // Digital Output Pins (Relays)
-  pinMode(RELAY1_PIN, OUTPUT); // RELAY_Y (Line 1) - GPIO38
-  pinMode(RELAY2_PIN, OUTPUT); // RELAY_Y (Line 2) - GPIO45
-  pinMode(RELAY3_PIN, OUTPUT); // RELAY_B (Line 3) - GPIO46
-  digitalWrite(RELAY1_PIN, LOW);  // Turn off relay 1
-  digitalWrite(RELAY2_PIN, LOW);  // Turn off relay 2
-  digitalWrite(RELAY3_PIN, LOW);  // Turn off relay 3
-  
-  // Digital Input Pins
-  pinMode(BUTTON_PIN, INPUT); // BUTTON - GPIO37
-
-  // Initialize I2C for LCD display
-  Wire.begin(MCU_SDA_PIN, MCU_SCL_PIN);
-  //setup button interrupt
-  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), [](){
-    iemOpt.rl1_opt = LOW; // Toggle relay 1 operation on button press
-    iemOpt.rl2_opt = LOW; // Toggle relay 2 operation on button press
-    iemOpt.rl3_opt = LOW; // Toggle relay 3 operation on button press
-  }, FALLING);
-}
 
 void init_lcd() {
   // Initialize I2C LCD display
@@ -350,6 +270,89 @@ void adc_read_currents() {
     iemOpt.rl3_opt = true; // Update relay operation in controller operation
     publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   }
+}
+
+void init_controller() {
+  Serial.println("Controller init...\r\n");
+  // Initialize controller status
+  read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
+  if(iemConf.version != FIRMWARE_VERSION) { // Check if the version matches expected value
+    Serial.println("No valid configuration found in NVS, initializing with default values.");
+    iemSta.status = 0; // Active
+    iemSta.btt = 0; // 0% battery
+    iemSta.wifi = 0; // 0% WiFi signal
+    iemSta.alm = 0; // No Alarm
+    iemSta.ry_voltage = 0;
+    iemSta.yb_voltage = 0;
+    iemSta.br_voltage = 0;
+    iemSta.c1_current = 0.0;
+    iemSta.c2_current = 0.0;
+    iemSta.c3_current = 0.0;
+    iemSta.rl1_status = false; // OFF
+    iemSta.rl2_status = false; // OFF
+    iemSta.rl3_status = false; // OFF
+
+    // Initialize controller settings
+    iemConf.version = FIRMWARE_VERSION; // Set version to indicate valid configuration
+    iemConf.volt.mx_ry_threshold = 240; // Example threshold values
+    iemConf.volt.mx_yb_threshold = 240;
+    iemConf.volt.mx_br_threshold = 240;
+    iemConf.volt.mn_ry_threshold = 180;
+    iemConf.volt.mn_yb_threshold = 180;
+    iemConf.volt.mn_br_threshold = 180;
+    iemConf.curr.mx_c1_threshold = 5.0; // Example threshold values
+    iemConf.curr.mx_c2_threshold = 5.0;
+    iemConf.curr.mx_c3_threshold = 5.0;
+    strcpy(iemConf.net.ssid, DEFAULT_WIFI_STA_SSID);
+    strcpy(iemConf.net.password, DEFAULT_WIFI_STA_PASSWORD);
+    
+    // Initialize controller operation
+    iemOpt.rl1_opt = false; // OFF
+    iemOpt.rl2_opt = false; // OFF
+    iemOpt.rl3_opt = false; // OFF
+
+    // Initialize controller bill
+    for(int i = 0; i < 12; i++) {
+      iemBill[i].nm = "";
+      iemBill[i].Cn = "";
+      iemBill[i].unit = 0;
+      iemBill[i].tariff = 0;
+      iemBill[i].enrg = 0;
+      iemBill[i].fix = 0;
+      iemBill[i].tax = 0;
+      iemBill[i].total = 0;
+    }
+    write_data_to_nvs("iem_conf", &iemConf, sizeof(iemConf)); // Save the default configuration to NVS
+    write_data_to_nvs("iem_bill", iemBill, sizeof(iemBill)); // Save the default bill data to NVS
+    write_data_to_nvs("iem_pwr", &iemPwr, sizeof(iemPwr)); // Save the default power calculation data to NVS
+  } else {
+    Serial.println("Valid configuration found in NVS, loading...");
+    read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
+    read_data_from_nvs("iem_bill", iemBill, sizeof(iemBill));
+    read_data_from_nvs("iem_pwr", &iemPwr, sizeof(iemPwr));
+  }
+  //Initialize the GPIO pins
+  // Digital Output Pins (Relays)
+  pinMode(RELAY1_PIN, OUTPUT); // RELAY_Y (Line 1) - GPIO38
+  pinMode(RELAY2_PIN, OUTPUT); // RELAY_Y (Line 2) - GPIO45
+  pinMode(RELAY3_PIN, OUTPUT); // RELAY_B (Line 3) - GPIO46
+  digitalWrite(RELAY1_PIN, LOW);  // Turn off relay 1
+  digitalWrite(RELAY2_PIN, LOW);  // Turn off relay 2
+  digitalWrite(RELAY3_PIN, LOW);  // Turn off relay 3
+  
+  // Digital Input Pins
+  pinMode(BUTTON_PIN, INPUT); // BUTTON - GPIO37
+
+  // Initialize I2C for LCD display
+  Wire.begin(MCU_SDA_PIN, MCU_SCL_PIN);
+  //setup button interrupt
+  attachInterrupt(digitalPinToInterrupt(BUTTON_PIN), [](){
+    iemOpt.rl1_opt = LOW; // Toggle relay 1 operation on button press
+    iemOpt.rl2_opt = LOW; // Toggle relay 2 operation on button press
+    iemOpt.rl3_opt = LOW; // Toggle relay 3 operation on button press
+  }, FALLING);
+
+  init_lcd();
 }
 
 #endif // CONTROLLER_H
