@@ -12,7 +12,7 @@ Preferences pref;
 ESP32Time rtc; // Create an instance of the ESP32Time class to manage time functions
 LiquidCrystal_I2C lcd(LCD_ADDR, LCD_COLS, LCD_ROWS); // I2C LCD display at address 0x27, 16 columns, 4 rows
 
-char receive_buffer[200]; // Buffer to hold incoming MQTT messages
+char receive_buffer[200]; // Buffer to hold incoming MQTT messages  
 bool mqtt_received = false; // Flag to indicate if a new MQTT message has been received
 uint8_t network_status = IDLE;
 uint8_t publish_data = STATUS_UPDATE; // 0 for status update, 1 for bill update
@@ -67,6 +67,12 @@ void loop() {
       if(getLocalTime(&timeinfo)) rtc.setTimeStruct(timeinfo); // Set RTC time from NTP
       Serial.print("Current Time: ");
       Serial.println(rtc.getTime("%Y-%m-%d %H:%M:%S"));
+      Serial.printf("Chip Rev: %d\n", ESP.getChipRevision());
+      Serial.printf("Free Heap: %d\n", ESP.getFreeHeap());
+      Serial.print("DNS IP: ");
+      Serial.println(WiFi.dnsIP());
+      Serial.print("RSSI: ");
+      Serial.println(WiFi.RSSI());  // Should be better than -70 dBm
       network_status = WIFI_CONNECT;
     } else if(WiFi.status() == WL_CONNECTED && network_status == WIFI_CONNECT) {
       // WiFi is connected, you can add code here to handle MQTT or other tasks

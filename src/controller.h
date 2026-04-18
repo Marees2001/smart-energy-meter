@@ -77,7 +77,7 @@ struct NETWORK_SETTINGS {
 /*Structure definition for Controller settings*/
 struct CONTROLLER_SETTINGS {
   // Add any necessary member variables here
-  float version; // Firmware version
+  int version; // Firmware version
   VOLTAGE_SETTINGS volt;
   CURRENT_SETTINGS curr;
   NETWORK_SETTINGS net;
@@ -116,7 +116,7 @@ struct POWER_CALCULATION {
 };
 
 void init_controller() {
-  Serial.println("Controller init...\r\n");
+  Serial.println("Controller init...V"+String(iemConf.version));
   // Initialize controller status
   read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
   if(iemConf.version != FIRMWARE_VERSION) { // Check if the version matches expected value

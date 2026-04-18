@@ -2,7 +2,7 @@
 #ifndef DEFINE_H
 #define DEFINE_H
 
-#define FIRMWARE_VERSION 1.0
+#define FIRMWARE_VERSION 110
 // Pin definitions
 #define MCU_SDA_PIN 8
 #define MCU_SCL_PIN 9
