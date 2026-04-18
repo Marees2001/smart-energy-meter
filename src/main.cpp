@@ -37,6 +37,20 @@ void setup() {
   // Setup HTTP server for WiFi configuration & Settings
   setup_server();
   
+  Serial.println("I2C Scanner");
+  byte error, address;
+  for(address = 1; address < 127; address++) {
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+    Serial.printf("I2C scane aadr-%x\n\r",address);
+    if (error == 0) {
+      Serial.print("Found at 0x");
+      Serial.println(address, HEX);
+    }
+    delay(500);
+  }
+  Serial.printf("Scan completed...\n\r");
+  
 }
 
 void loop() {
