@@ -180,7 +180,7 @@ void publish_data_to_mqtt(uint8_t type) {
         JsonObject param = doc["param"].to<JsonObject>();
         param["nm"] = iemBill.nm;
         param["Cn"] = iemBill.Cn;
-        param["unit"] = iemBill.CALC[bill_month].unit;
+        param["unit"] = round(iemBill.CALC[bill_month].unit * 100.0) / 100.0;
         param["tariff"] = iemBill.tariff;
         param["enrg"] = iemBill.enrg;
         param["fix"] = iemBill.fix;
@@ -194,10 +194,11 @@ void publish_data_to_mqtt(uint8_t type) {
     }
     }
 
+    Serial.println("Publishing data to MQTT:[" + doc.as<String>() + "]");
     doc.shrinkToFit(); // Optimize memory usage
     char buffer[300];
     size_t n = serializeJson(doc, buffer);
-    mqttClient.publish(MQTT_TOPIC, buffer, n);
+    mqttClient.publish(MQTT_TOPIC,(const uint8_t*)buffer, n, false); // Publish with retain flag set to true
     doc.clear(); // Clear the document after publishing
 }
 
