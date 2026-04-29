@@ -291,22 +291,22 @@ void update_display(){
     lcd.print("<---NO ALARM--->");
 
     lcd.setCursor(0, 1);
-    lcd.printf("OV: %03dv", 230);
+    lcd.printf("OV: %03dv", iemConf.volt.mx_ry_threshold);
 
     lcd.setCursor(11, 1);
-    lcd.printf("OL: %.1fA", 9.5);
+    lcd.printf("OL: %.1fA", iemConf.curr.mx_c1_threshold);
 
     lcd.setCursor(1, 2);
-    lcd.printf("R: %03dv", 230);
+    lcd.printf("R: %03dv", iemSta.ry_voltage);
 
     lcd.setCursor(12, 2);
-    lcd.printf("R: %.1fA", 10.5);
+    lcd.printf("R: %.1fA", iemSta.c1_current);
 
     lcd.setCursor(0, 3);
-    lcd.printf("OL: %03dv", 240);
+    lcd.printf("UV: %03dv", iemConf.volt.mn_ry_threshold);
 
     lcd.setCursor(11, 3);
-    lcd.printf("%.2f kWh", 27.05);
+    lcd.printf("%.2f kWh", iemPwr.ry_power);
   }
 
   // -------- SCREEN 3 : OVER LOAD --------
@@ -317,22 +317,22 @@ void update_display(){
     lcd.print("<---OVER LOAD--->");
 
     lcd.setCursor(0, 1);
-    lcd.printf("OV: %03dv", 240);
+    lcd.printf("OV: %03dv", iemConf.volt.mx_yb_threshold);
 
     lcd.setCursor(11, 1);
-    lcd.printf("OL: %.1fA", 10.5);
+    lcd.printf("OL: %.1fA", iemConf.curr.mx_c2_threshold);
 
     lcd.setCursor(1, 2);
-    lcd.printf("B: %03dv", 250);
+    lcd.printf("B: %03dv", iemSta.yb_voltage);
 
     lcd.setCursor(12, 2);
-    lcd.printf("B: %.1fA", 9.5);
+    lcd.printf("B: %.1fA", iemSta.c2_current);
 
     lcd.setCursor(0, 3);
-    lcd.printf("UV: %03dv", 240);
+    lcd.printf("UV: %03dv", iemConf.volt.mn_yb_threshold);
 
     lcd.setCursor(11, 3);
-    lcd.printf("%.2f kWh", 27.05);
+    lcd.printf("%.2f kWh", iemPwr.yb_power);
   }
 
   // -------- SCREEN 4 : OVER VOLTAGE --------
@@ -343,22 +343,22 @@ void update_display(){
     lcd.print("<--OVER VOLTAGE-->");
 
     lcd.setCursor(0, 1);
-    lcd.printf("OV: %03dv", 240);
+    lcd.printf("OV: %03dv", iemConf.volt.mx_br_threshold);
 
     lcd.setCursor(11, 1);
-    lcd.printf("OL: %.1fA", 10.5);
+    lcd.printf("OL: %.1fA", iemConf.curr.mx_c3_threshold);
 
     lcd.setCursor(1, 2);
-    lcd.printf("B: %03dv", 250);
+    lcd.printf("B: %03dv", iemSta.br_voltage);
 
     lcd.setCursor(12, 2);
-    lcd.printf("B: %.1fA", 9.5);
+    lcd.printf("B: %.1fA", iemSta.c3_current);
 
     lcd.setCursor(0, 3);
-    lcd.printf("UV: %03dv", 240);
+    lcd.printf("UV: %03dv", iemConf.volt.mn_br_threshold);
 
     lcd.setCursor(11, 3);
-    lcd.printf("%.2f kWh", 27.05);
+    lcd.printf("%.2f kWh", iemPwr.br_power);
   }
   lcd.display();
 }
