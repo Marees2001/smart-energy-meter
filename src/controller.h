@@ -444,6 +444,7 @@ void init_controller() {
   digitalWrite(RELAY1_PIN, LOW);  // Turn off relay 1
   digitalWrite(RELAY2_PIN, LOW);  // Turn off relay 2
   digitalWrite(RELAY3_PIN, LOW);  // Turn off relay 3
+  analogSetPinAttenuation(BATT_ADC_PIN, ADC_11db);
   
   // Digital Input Pins
   pinMode(BUTTON_PIN, INPUT); // BUTTON - GPIO37
