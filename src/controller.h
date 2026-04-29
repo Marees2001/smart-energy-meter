@@ -290,9 +290,6 @@ void update_display(){
   else if (status == 1) {
     status = 2;
 
-    lcd.setCursor(1, 0);
-    lcd.print("<---NO ALARM--->");
-
     lcd.setCursor(0, 1);
     lcd.printf("OV: %03dv", iemConf.volt.mx_ry_threshold);
 
@@ -315,10 +312,6 @@ void update_display(){
   // -------- SCREEN 3 : OVER LOAD --------
   else if (status == 2) {
     status = 3;
-
-    lcd.setCursor(1, 0);
-    lcd.print("<---OVER LOAD--->");
-
     lcd.setCursor(0, 1);
     lcd.printf("OV: %03dv", iemConf.volt.mx_yb_threshold);
 
@@ -341,10 +334,7 @@ void update_display(){
   // -------- SCREEN 4 : OVER VOLTAGE --------
   else if (status == 3) {
     status = 1;
-
-    lcd.setCursor(1, 0);
-    lcd.print("<--OVER VOLTAGE-->");
-
+  
     lcd.setCursor(0, 1);
     lcd.printf("OV: %03dv", iemConf.volt.mx_br_threshold);
 
@@ -363,6 +353,27 @@ void update_display(){
     lcd.setCursor(11, 3);
     lcd.printf("%.2f kWh", iemPwr.br_power);
   }
+
+  if(iemSta.alm == 0){
+    lcd.setCursor(1, 0);
+    lcd.print("<---NO ALARM--->");
+  }else if(iemSta.alm == 1){
+    lcd.setCursor(1, 0);
+    lcd.print("<-POWER SHUTDOWN->");
+  }else if(iemSta.alm == 2){
+    lcd.setCursor(1, 0);
+    lcd.print("<---OVER LOAD--->");
+  }else if(iemSta.alm == 3){
+    lcd.setCursor(1, 0);
+    lcd.print("<--OVER VOLTAGE-->");
+  }else if(iemSta.alm == 4){
+    lcd.setCursor(1, 0);
+    lcd.print("<-UNDER VOLTAGE->");
+  }else {
+    lcd.setCursor(1, 0);
+    lcd.print("<-UNKNOWN ALARM->");
+  }
+
   lcd.display();
 }
 
