@@ -450,7 +450,7 @@ void init_controller() {
     iemOpt.rl3_opt = LOW; // Toggle relay 3 operation on button press
   }, FALLING);
 
-  init_lcd();
+  //init_lcd();
 }
 
 #endif // CONTROLLER_H

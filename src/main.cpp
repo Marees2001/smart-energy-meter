@@ -60,6 +60,7 @@ void loop() {
   static unsigned long current_read_timeout = 0;
   static unsigned long power_calc_timeout = 0;
   static unsigned long bill_save_timeout = 0;
+  static unsigned long display_timout = 0;
 
   // Handle incoming HTTP requests
   server.handleClient();
@@ -100,7 +101,7 @@ void loop() {
   }
 
   /*Function to read voltages*/
-  if(millis()-voltage_read_timeout > 1000) { // Read voltages every 10 seconds
+  if(millis() > voltage_read_timeout + 1000) { // Read voltages every 10 seconds
     voltage_read_timeout = millis();
     adc_read_voltages();
     wifi_rssi(); // Update WiFi signal strength in controller status
@@ -108,7 +109,7 @@ void loop() {
   }
 
   /*Function to read currents*/
-  if(millis()-current_read_timeout > 1000) { // Read currents every 1 second
+  if(millis() > current_read_timeout + 1000) { // Read currents every 1 second
     current_read_timeout = millis();
     adc_read_currents();
   }
@@ -165,7 +166,7 @@ void loop() {
    * - This approach assumes constant power over the interval for energy calculation.
    * - Adjusting POWER_FACTOR or the interval affects measurement accuracy.
    * --------------------------------------------------------------- */
-  if(millis()-power_calc_timeout > POWER_CALCULATION_INTERVAL) { // Calculate power every 5 seconds
+  if(millis() > power_calc_timeout + POWER_CALCULATION_INTERVAL) { // Calculate power every 5 seconds
     power_calc_timeout = millis();
     iemPwr.bill_month = rtc.getMonth(); // Update billing month based on current time
 
@@ -187,14 +188,19 @@ void loop() {
   }
 
   /*Function to save bill data*/
-  if(millis()-bill_save_timeout > 60000L) { // Save bill data every 60 seconds
+  if(millis() > bill_save_timeout + 60000L) { // Save bill data every 60 seconds
     bill_save_timeout = millis();
     write_data_to_nvs("iem_bill", &iemBill, sizeof(iemBill)); // Save the entire bill array to NVS
     write_data_to_nvs("iem_pwr", &iemPwr, sizeof(iemPwr)); // Save power calculation data to NVS
   }
 
+  if(millis() > display_timout + 3000L){
+    display_timout = millis();
+    update_display();
+  }
+
   /*Function to publish status updates*/
-  if(millis()-status_publish_timeout > 30000L) { // Publish status update every 30 seconds
+  if(millis() > status_publish_timeout + 30000L) { // Publish status update every 30 seconds
     status_publish_timeout = millis();
     publish_data = STATUS_UPDATE;
   }
