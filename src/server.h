@@ -249,6 +249,42 @@ void http_handle_settings_save(){
 
 void http_handle_settings(){
     Serial.println("Config page requested");
+    read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
+    read_data_from_nvs("iem_bill", &iemBill, sizeof(iemBill));
+    String html = config_page;
+    if(iemPwr.bill_type == 1){
+        html.replace("%mode1%", "selected");
+        html.replace("%mode3%", "");
+
+        html.replace("%vmin%",String(iemConf.volt.mn_ry_threshold));
+        html.replace("%vmax%",String(iemConf.volt.mx_ry_threshold));
+
+        html.replace("%imin%",String(iemConf.curr.mx_c1_threshold,2));
+    }else {
+        html.replace("%mode1%", "");
+        html.replace("%mode3%", "selected");
+
+        html.replace("%vR_min%",String(iemConf.volt.mn_ry_threshold));
+        html.replace("%vR_max%",String(iemConf.volt.mx_ry_threshold));
+        html.replace("%iR_max%",String(iemConf.curr.mx_c1_threshold,2));
+
+        html.replace("%vY_min%",String(iemConf.volt.mn_yb_threshold));
+        html.replace("%vY_max%",String(iemConf.volt.mx_ry_threshold));
+        html.replace("%iY_max%",String(iemConf.curr.mx_c2_threshold,2));
+
+        html.replace("%vB_min%",String(iemConf.volt.mn_br_threshold));
+        html.replace("%vB_max%",String(iemConf.volt.mx_br_threshold));
+        html.replace("%iB_max%",String(iemConf.curr.mx_c3_threshold,2));
+
+    }
+
+    html.replace("%name%",iemBill.nm);
+    html.replace("%consumer%",iemBill.Cn);
+    html.replace("%tariff%",String(iemBill.tariff));
+    html.replace("%energy%",String(iemBill.enrg));
+    html.replace("%fixed%",String(iemBill.fix));
+    html.replace("%tax%",String(iemBill.tax));
+
     server.send(200, "text/html", config_page);
 }
 
