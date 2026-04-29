@@ -13,7 +13,7 @@
 extern struct CONTROLLER_STATUS iemSta;
 extern struct CONTROLLER_SETTINGS iemConf;
 extern struct CONTROLLER_OPERATION iemOpt;
-extern struct CONTROLLER_BILL iemBill[12];
+extern struct CONTROLLER_BILL iemBill;
 extern char receive_buffer[200];
 extern uint8_t network_status;
 extern bool mqtt_received;
@@ -178,14 +178,14 @@ void publish_data_to_mqtt(uint8_t type) {
     case BILL_UPDATE: {
         doc["method"] = "billSta";
         JsonObject param = doc["param"].to<JsonObject>();
-        param["nm"] = iemBill[bill_month].nm;
-        param["Cn"] = iemBill[bill_month].Cn;
-        param["unit"] = iemBill[bill_month].unit;
-        param["tariff"] = iemBill[bill_month].tariff;
-        param["enrg"] = iemBill[bill_month].enrg;
-        param["fix"] = iemBill[bill_month].fix;
-        param["tax"] = iemBill[bill_month].tax;
-        param["total"] = iemBill[bill_month].total;
+        param["nm"] = iemBill.nm;
+        param["Cn"] = iemBill.Cn;
+        param["unit"] = iemBill.CALC[bill_month].unit;
+        param["tariff"] = iemBill.tariff;
+        param["enrg"] = iemBill.enrg;
+        param["fix"] = iemBill.fix;
+        param["tax"] = iemBill.tax;
+        param["total"] = iemBill.CALC[bill_month].total;
         break;
     }
     default: {
@@ -201,6 +201,55 @@ void publish_data_to_mqtt(uint8_t type) {
     doc.clear(); // Clear the document after publishing
 }
 
+void http_handle_settings_save(){
+   String mode = server.arg("mode");
+
+    // 🔹 Device Config
+    if (mode == "1") {
+        iemConf.volt.mn_ry_threshold = server.arg("vmin").toInt();
+        iemConf.volt.mx_ry_threshold  = server.arg("vmax").toInt();
+        float imin = server.arg("imin").toFloat();
+        iemConf.curr.mx_c1_threshold = server.arg("imax").toFloat();
+
+        Serial.println("Single Phase Config: MAX-"+String(iemConf.volt.mx_ry_threshold)
+        +",MIN-"+String(iemConf.volt.mn_ry_threshold));
+        Serial.println("Single Amp Config: MAX-"+String(iemConf.curr.mx_c1_threshold));
+    }
+    else {
+        iemConf.volt.mx_ry_threshold = server.arg("vr_min").toInt();
+        iemConf.volt.mn_ry_threshold = server.arg("vr_max").toInt();
+        iemConf.curr.mx_c1_threshold = server.arg("iR_max").toFloat();
+
+        iemConf.volt.mx_ry_threshold = server.arg("vy_min").toInt();
+        iemConf.volt.mn_ry_threshold = server.arg("vy_max").toInt();
+        iemConf.curr.mx_c2_threshold = server.arg("iY_max").toFloat();
+
+        iemConf.volt.mx_yb_threshold = server.arg("vb_min").toInt();
+        iemConf.volt.mn_yb_threshold = server.arg("vb_max").toInt();
+        iemConf.curr.mx_c3_threshold = server.arg("iB_max").toFloat();
+        Serial.println("3 Phase Config:");
+        //Serial.println(vr_min);
+    }
+
+    // 🔹 Billing Config (COMMON)
+    iemBill.nm    = server.arg("name");
+    iemBill.Cn    = server.arg("consumer");
+    iemBill.tariff = server.arg("tariff").toFloat();
+    iemBill.enrg   = server.arg("energy").toFloat();
+    iemBill.fix    = server.arg("fixed").toFloat();
+    iemBill.tax    = server.arg("tax").toFloat();
+
+    write_data_to_nvs("iem_conf", &iemConf, sizeof(iemConf)); // Save the default configuration to NVS
+    write_data_to_nvs("iem_bill", &iemBill, sizeof(iemBill)); // Save the entire bill array to NVS
+
+    // 🔹 Send response
+    server.send(200, "text/html", "<h3>Saved Successfully</h3>");
+}
+
+void http_handle_settings(){
+    Serial.println("Config page requested");
+    server.send(200, "text/html", config_page);
+}
 
 void http_handle_wifi(){
     Serial.println("WiFi page requested");
@@ -220,11 +269,13 @@ void handle_wifi_Save() {
 }
 
 void setup_server() {
-  Serial.println("Setting up server...");
-  server.on("/", [](){ server.send(200, "text/plain", "ESP32 Server Running"); });
-  server.on("/wifi", http_handle_wifi);
-  server.on("/wifi/save", handle_wifi_Save);
-  server.begin();
-  Serial.println("Server started");
+    Serial.println("Setting up server...");
+    server.on("/", [](){ server.send(200, "text/plain", "ESP32 Server Running"); });
+    server.on("/wifi", http_handle_wifi);
+    server.on("/wifi/save", handle_wifi_Save);
+    server.on("/config", http_handle_settings);
+    server.on("/config", http_handle_settings_save);
+    server.begin();
+    Serial.println("Server started");
 }
 #endif // SERVER_H  

@@ -5,7 +5,7 @@
 struct CONTROLLER_STATUS iemSta;
 struct CONTROLLER_SETTINGS iemConf;
 struct CONTROLLER_OPERATION iemOpt;
-struct CONTROLLER_BILL iemBill[12];
+struct CONTROLLER_BILL iemBill;
 struct POWER_CALCULATION iemPwr;
 
 Preferences pref;
@@ -37,19 +37,19 @@ void setup() {
   // Setup HTTP server for WiFi configuration & Settings
   setup_server();
   
-  Serial.println("I2C Scanner");
-  byte error, address;
-  for(address = 1; address < 127; address++) {
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-    Serial.printf("I2C scane aadr-%x\n\r",address);
-    if (error == 0) {
-      Serial.print("Found at 0x");
-      Serial.println(address, HEX);
-    }
-    delay(500);
-  }
-  Serial.printf("Scan completed...\n\r");
+  // Serial.println("I2C Scanner");
+  // byte error, address;
+  // for(address = 1; address < 127; address++) {
+  //   Wire.beginTransmission(address);
+  //   error = Wire.endTransmission();
+  //   Serial.printf("I2C scane aadr-%x\n\r",address);
+  //   if (error == 0) {
+  //     Serial.print("Found at 0x");
+  //     Serial.println(address, HEX);
+  //   }
+  //   delay(500);
+  // }
+  // Serial.printf("Scan completed...\n\r");
   
 }
 
@@ -178,18 +178,18 @@ void loop() {
     float energy_increment = (total_power * POWER_CALCULATION_INTERVAL) / 3600000.0;
     // Convert to kWh
     energy_increment = energy_increment / 1000.0;
-    iemBill[iemPwr.bill_month].enrg += energy_increment; // Accumulate energy for the month
+    iemBill.CALC[iemPwr.bill_month].unit += energy_increment; // Accumulate energy for the month
     // Bill calculated for all bill types, but for bill_type is home only if energy exceeds 100 kWh
-    if(iemPwr.bill_type != 1 || iemBill[iemPwr.bill_month].enrg > 100)
-    iemBill[iemPwr.bill_month].total = iemBill[iemPwr.bill_month].fix 
-        + (iemBill[iemPwr.bill_month].tariff * iemBill[iemPwr.bill_month].enrg) 
-        + iemBill[iemPwr.bill_month].tax; // Total bill amount
+    if(iemPwr.bill_type != 1 || iemBill.CALC[iemPwr.bill_month].unit > 100)
+    iemBill.CALC[iemPwr.bill_month].total = iemBill.fix 
+        + (iemBill.tariff * iemBill.CALC[iemPwr.bill_month].unit) 
+        + iemBill.tax; // Total bill amount
   }
 
   /*Function to save bill data*/
   if(millis()-bill_save_timeout > 60000L) { // Save bill data every 60 seconds
     bill_save_timeout = millis();
-    write_data_to_nvs("iem_bill", iemBill, sizeof(iemBill)); // Save the entire bill array to NVS
+    write_data_to_nvs("iem_bill", &iemBill, sizeof(iemBill)); // Save the entire bill array to NVS
     write_data_to_nvs("iem_pwr", &iemPwr, sizeof(iemPwr)); // Save power calculation data to NVS
   }
 
