@@ -20,7 +20,7 @@ ZMPT101B br_voltSens(PHASE3_ADC_PIN);
 extern struct CONTROLLER_STATUS iemSta;
 extern struct CONTROLLER_SETTINGS iemConf;
 extern struct CONTROLLER_OPERATION iemOpt;
-extern struct CONTROLLER_BILL iemBill[12];
+extern struct CONTROLLER_BILL iemBill;
 extern struct POWER_CALCULATION iemPwr;
 
 extern uint8_t publish_data;
@@ -91,16 +91,21 @@ struct CONTROLLER_OPERATION {
   bool rl3_opt = false; // 0 for OFF, 1 for ON
 };
 
+/*Structure definition for Controller bill conf*/
+struct CONTROLLER_BILL_CAL{
+  float unit; // Units consumed
+  float total; // Total amount
+};
+
 /*Structure definition for Controller bill*/
 struct CONTROLLER_BILL {
   String nm; // Name
   String Cn; // Consumer number
-  float unit; // Units consumed
   uint8_t tariff; // Tariff rate
   float enrg; // Energy charge
   float fix; // Fixed charge
   float tax; // Tax
-  float total; // Total amount
+  CONTROLLER_BILL_CAL CALC[13];
 };
 
 /*Structure definition for power calculation*/
@@ -137,7 +142,7 @@ void btt_status() {
   int adc_value = analogRead(BATT_ADC_PIN);
   // Convert ADC reading to voltage in millivolts
   // Assuming voltage divider is configured to read up to 4.2V
-  float voltage_mv = (adc_value / 4095.0) * 3300.0 * 1.27; // 1.27 factor for voltage divider correction
+  float voltage_mv = (adc_value / 4095.0) * 3300.0 * 2.79; // 1.27 factor for voltage divider correction
   // Map voltage range 3000mV (0%) to 4200mV (100%) to level 0-3
   if (voltage_mv <= 3000) {
     iemSta.btt = 0; // 0%
@@ -272,6 +277,99 @@ void adc_read_currents() {
   }
 }
 
+void update_display(){
+  static byte status = 0;
+  lcd.clear();
+  // -------- SCREEN 1 --------
+  if (status == 0) {
+    status = 1;
+
+    lcd.setCursor(4, 1);
+    lcd.print("SMART ENERGY");
+    lcd.setCursor(7, 2);
+    lcd.print("METER");
+  }
+
+  // -------- SCREEN 2 : NO ALARM --------
+  else if (status == 1) {
+    status = 2;
+
+    lcd.setCursor(1, 0);
+    lcd.print("<---NO ALARM--->");
+
+    lcd.setCursor(0, 1);
+    lcd.printf("OV: %03dv", 230);
+
+    lcd.setCursor(11, 1);
+    lcd.printf("OL: %.1fA", 9.5);
+
+    lcd.setCursor(1, 2);
+    lcd.printf("R: %03dv", 230);
+
+    lcd.setCursor(12, 2);
+    lcd.printf("R: %.1fA", 10.5);
+
+    lcd.setCursor(0, 3);
+    lcd.printf("OL: %03dv", 240);
+
+    lcd.setCursor(11, 3);
+    lcd.printf("%.2f kWh", 27.05);
+  }
+
+  // -------- SCREEN 3 : OVER LOAD --------
+  else if (status == 2) {
+    status = 3;
+
+    lcd.setCursor(1, 0);
+    lcd.print("<---OVER LOAD--->");
+
+    lcd.setCursor(0, 1);
+    lcd.printf("OV: %03dv", 240);
+
+    lcd.setCursor(11, 1);
+    lcd.printf("OL: %.1fA", 10.5);
+
+    lcd.setCursor(1, 2);
+    lcd.printf("B: %03dv", 250);
+
+    lcd.setCursor(12, 2);
+    lcd.printf("B: %.1fA", 9.5);
+
+    lcd.setCursor(0, 3);
+    lcd.printf("UV: %03dv", 240);
+
+    lcd.setCursor(11, 3);
+    lcd.printf("%.2f kWh", 27.05);
+  }
+
+  // -------- SCREEN 4 : OVER VOLTAGE --------
+  else if (status == 3) {
+    status = 1;
+
+    lcd.setCursor(1, 0);
+    lcd.print("<--OVER VOLTAGE-->");
+
+    lcd.setCursor(0, 1);
+    lcd.printf("OV: %03dv", 240);
+
+    lcd.setCursor(11, 1);
+    lcd.printf("OL: %.1fA", 10.5);
+
+    lcd.setCursor(1, 2);
+    lcd.printf("B: %03dv", 250);
+
+    lcd.setCursor(12, 2);
+    lcd.printf("B: %.1fA", 9.5);
+
+    lcd.setCursor(0, 3);
+    lcd.printf("UV: %03dv", 240);
+
+    lcd.setCursor(11, 3);
+    lcd.printf("%.2f kWh", 27.05);
+  }
+  lcd.display();
+}
+
 void init_controller() {
   Serial.println("Controller init...\r\n");
   // Initialize controller status
@@ -312,23 +410,23 @@ void init_controller() {
     iemOpt.rl3_opt = false; // OFF
 
     // Initialize controller bill
+      iemBill.tariff = 0;
+      iemBill.enrg = 0;
+      iemBill.fix = 0;
+      iemBill.tax = 0;
+      iemBill.nm = "";
+      iemBill.Cn = "";
     for(int i = 0; i < 12; i++) {
-      iemBill[i].nm = "";
-      iemBill[i].Cn = "";
-      iemBill[i].unit = 0;
-      iemBill[i].tariff = 0;
-      iemBill[i].enrg = 0;
-      iemBill[i].fix = 0;
-      iemBill[i].tax = 0;
-      iemBill[i].total = 0;
+      iemBill.CALC[i].unit = 0;
+      iemBill.CALC[i].total = 0;
     }
     write_data_to_nvs("iem_conf", &iemConf, sizeof(iemConf)); // Save the default configuration to NVS
-    write_data_to_nvs("iem_bill", iemBill, sizeof(iemBill)); // Save the default bill data to NVS
+    write_data_to_nvs("iem_bill", &iemBill, sizeof(iemBill)); // Save the default bill data to NVS
     write_data_to_nvs("iem_pwr", &iemPwr, sizeof(iemPwr)); // Save the default power calculation data to NVS
   } else {
     Serial.println("Valid configuration found in NVS, loading...");
     read_data_from_nvs("iem_conf", &iemConf, sizeof(iemConf));
-    read_data_from_nvs("iem_bill", iemBill, sizeof(iemBill));
+    read_data_from_nvs("iem_bill", &iemBill, sizeof(iemBill));
     read_data_from_nvs("iem_pwr", &iemPwr, sizeof(iemPwr));
   }
   //Initialize the GPIO pins
