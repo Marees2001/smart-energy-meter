@@ -146,6 +146,9 @@ void btt_status() {
   } else {
     iemSta.btt = 3; // 100%
   }
+
+  Serial.println("Battery Voltage:"+String(voltage_mv)+" "
+  +String(iemSta.btt)+"%%");
 }
 
 void adc_read_voltages() {

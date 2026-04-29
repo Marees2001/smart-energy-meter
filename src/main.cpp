@@ -184,10 +184,14 @@ void loop() {
     energy_increment = energy_increment / 1000.0;
     iemBill.CALC[iemPwr.bill_month].unit += energy_increment; // Accumulate energy for the month
     // Bill calculated for all bill types, but for bill_type is home only if energy exceeds 100 kWh
-    if(iemPwr.bill_type != 1 || iemBill.CALC[iemPwr.bill_month].unit > 100)
-    iemBill.CALC[iemPwr.bill_month].total = iemBill.fix 
-        + (iemBill.tariff * iemBill.CALC[iemPwr.bill_month].unit) 
-        + iemBill.tax; // Total bill amount
+    if(iemPwr.bill_type != 1 || iemBill.CALC[iemPwr.bill_month].unit > 100) {
+      iemBill.CALC[iemPwr.bill_month].total = iemBill.fix 
+          + (iemBill.tariff * iemBill.CALC[iemPwr.bill_month].unit) 
+          + iemBill.tax; // Total bill amount
+    }
+    
+    Serial.println("Consume Unit:"+String(iemBill.CALC[iemPwr.bill_month].unit,2)+"Kwh");
+    Serial.println("Total Bill:"+String(iemBill.CALC[iemPwr.bill_month].total,2));
   }
 
   /*Function to save bill data*/
