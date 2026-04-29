@@ -274,7 +274,7 @@ void setup_server() {
     server.on("/wifi", http_handle_wifi);
     server.on("/wifi/save", handle_wifi_Save);
     server.on("/config", http_handle_settings);
-    server.on("/config", http_handle_settings_save);
+    server.on("/config/save", http_handle_settings_save);
     server.begin();
     Serial.println("Server started");
 }
