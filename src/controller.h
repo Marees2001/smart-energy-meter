@@ -125,15 +125,8 @@ void init_lcd() {
   // Initialize I2C LCD display
   lcd.init();
   lcd.backlight();
-  
-  // Display welcome message
-  lcd.setCursor(0, 0);
-  lcd.print("Energy Meter");
-  lcd.setCursor(0, 1);
-  lcd.print("Initializing...");
-  
+  lcd.blink_off();
   delay(2000);
-  lcd.clear();
 }
 
 void btt_status() {
@@ -171,13 +164,13 @@ void adc_read_voltages() {
     digitalWrite(RELAY1_PIN, HIGH); // Turn ON relay 1 to move NC to NO and disconnect load
     iemSta.rl1_status = true; // Update relay status in controller status
     iemOpt.rl1_opt = true; // Update relay operation in controller operation
-    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+    //publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   } else if (iemSta.ry_voltage < iemConf.volt.mn_ry_threshold) {
     iemSta.alm = 4; // Undervoltage
     digitalWrite(RELAY1_PIN, HIGH); // Turn ON relay 1 to move NC to NO and disconnect load
     iemSta.rl1_status = true; // Update relay status in controller status
     iemOpt.rl1_opt = true; // Update relay operation in controller operation
-    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+    //publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   }
 
   // Check YB voltage against thresholds and update alarm status
@@ -186,13 +179,13 @@ void adc_read_voltages() {
     digitalWrite(RELAY2_PIN, HIGH); // Turn ON relay 2 to move NC to NO and disconnect load
     iemSta.rl2_status = true; // Update relay status in controller status
     iemOpt.rl2_opt = true; // Update relay operation in controller operation
-    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+    //publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   } else if (iemSta.yb_voltage < iemConf.volt.mn_yb_threshold) {
     iemSta.alm = 4; // Undervoltage
     digitalWrite(RELAY2_PIN, HIGH); // Turn ON relay 2 to move NC to NO and disconnect load
     iemSta.rl2_status = true; // Update relay status in controller status
     iemOpt.rl2_opt = true; // Update relay operation in controller operation
-    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+    //publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   }
 
   // Check BR voltage against thresholds and update alarm status
@@ -201,13 +194,13 @@ void adc_read_voltages() {
     digitalWrite(RELAY3_PIN, HIGH); // Turn ON relay 3 to move NC to NO and disconnect load
     iemSta.rl3_status = true; // Update relay status in controller status
     iemOpt.rl3_opt = true; // Update relay operation in controller operation
-    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+    //publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   } else if (iemSta.br_voltage < iemConf.volt.mn_br_threshold) {
     iemSta.alm = 4; // Undervoltage
     digitalWrite(RELAY3_PIN, HIGH); // Turn ON relay 3 to move NC to NO and disconnect load
     iemSta.rl3_status = true; // Update relay status in controller status
     iemOpt.rl3_opt = true; // Update relay operation in controller operation
-    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+    //publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   }
 }
 
@@ -255,7 +248,7 @@ void adc_read_currents() {
     digitalWrite(RELAY1_PIN, HIGH); // Turn ON relay 1 to move NC to NO and disconnect load
     iemSta.rl1_status = true; // Update relay status in controller status
     iemOpt.rl1_opt = true; // Update relay operation in controller operation
-    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+    //publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   }
 
   // Check CT2 current against threshold and update alarm status
@@ -264,7 +257,7 @@ void adc_read_currents() {
     digitalWrite(RELAY2_PIN, HIGH); // Turn ON relay 2 to move NC to NO and disconnect load
     iemSta.rl2_status = true; // Update relay status in controller status
     iemOpt.rl2_opt = true; // Update relay operation in controller operation
-    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+    //publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   } 
 
   // Check CT3 current against threshold and update alarm status
@@ -273,7 +266,7 @@ void adc_read_currents() {
     digitalWrite(RELAY3_PIN, HIGH); // Turn ON relay 3 to move NC to NO and disconnect load
     iemSta.rl3_status = true; // Update relay status in controller status
     iemOpt.rl3_opt = true; // Update relay operation in controller operation
-    publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
+    //publish_data = STATUS_UPDATE; // Trigger MQTT publish for status update
   }
 }
 
@@ -450,7 +443,7 @@ void init_controller() {
     iemOpt.rl3_opt = LOW; // Toggle relay 3 operation on button press
   }, FALLING);
 
-  //init_lcd();
+  init_lcd();
 }
 
 #endif // CONTROLLER_H

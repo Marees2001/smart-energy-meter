@@ -151,47 +151,47 @@ void publish_data_to_mqtt(uint8_t type) {
     // Create a JSON document to hold the data
     JsonDocument doc;
     switch (type) {
-    case STATUS_UPDATE: {
-        doc["method"] = "status";
-        JsonObject param = doc["param"].to<JsonObject>();
-        param["sync"] = rtc.getEpoch(); // You might want to use millis() or a proper timestamp
-        JsonObject dev = param["dev"].to<JsonObject>();
-        dev["nm"] = "My Energy Meter";
-        dev["sta"] = iemSta.status ? 0 : 1; // Assuming 1 for active, 0 for offline, but JSON has 1
-        dev["wifi"] = iemSta.wifi;
-        dev["btt"] = iemSta.btt;
-        JsonObject l1 = param["l1"].to<JsonObject>();
-        l1["sta"] = iemSta.rl1_status ? 1 : 0;
-        l1["v"] = iemSta.ry_voltage;
-        l1["A"] = iemSta.c1_current;
-        JsonObject l2 = param["l2"].to<JsonObject>();
-        l2["sta"] = iemSta.rl2_status ? 1 : 0;
-        l2["v"] = iemSta.yb_voltage;
-        l2["A"] = iemSta.c2_current;
-        JsonObject l3 = param["l3"].to<JsonObject>();
-        l3["sta"] = iemSta.rl3_status ? 1 : 0;
-        l3["v"] = iemSta.br_voltage;
-        l3["A"] = iemSta.c3_current;
-        param["alm"] = iemSta.alm;  
-        break;
-    }
-    case BILL_UPDATE: {
-        doc["method"] = "billSta";
-        JsonObject param = doc["param"].to<JsonObject>();
-        param["nm"] = iemBill.nm;
-        param["Cn"] = iemBill.Cn;
-        param["unit"] = round(iemBill.CALC[bill_month].unit * 100.0) / 100.0;
-        param["tariff"] = iemBill.tariff;
-        param["enrg"] = iemBill.enrg;
-        param["fix"] = iemBill.fix;
-        param["tax"] = iemBill.tax;
-        param["total"] = iemBill.CALC[bill_month].total;
-        break;
-    }
-    default: {
-        Serial.println("Unknown publish type");
-        break;
-    }
+        case STATUS_UPDATE: {
+            doc["method"] = "status";
+            JsonObject param = doc["param"].to<JsonObject>();
+            param["sync"] = rtc.getEpoch(); // You might want to use millis() or a proper timestamp
+            JsonObject dev = param["dev"].to<JsonObject>();
+            dev["nm"] = "My Energy Meter";
+            dev["sta"] = iemSta.status ? 0 : 1; // Assuming 1 for active, 0 for offline, but JSON has 1
+            dev["wifi"] = iemSta.wifi;
+            dev["btt"] = iemSta.btt;
+            JsonObject l1 = param["l1"].to<JsonObject>();
+            l1["sta"] = iemSta.rl1_status ? 1 : 0;
+            l1["v"] = iemSta.ry_voltage;
+            l1["A"] = iemSta.c1_current;
+            JsonObject l2 = param["l2"].to<JsonObject>();
+            l2["sta"] = iemSta.rl2_status ? 1 : 0;
+            l2["v"] = iemSta.yb_voltage;
+            l2["A"] = iemSta.c2_current;
+            JsonObject l3 = param["l3"].to<JsonObject>();
+            l3["sta"] = iemSta.rl3_status ? 1 : 0;
+            l3["v"] = iemSta.br_voltage;
+            l3["A"] = iemSta.c3_current;
+            param["alm"] = iemSta.alm;  
+            break;
+        }
+        case BILL_UPDATE: {
+            doc["method"] = "billSta";
+            JsonObject param = doc["param"].to<JsonObject>();
+            param["nm"] = iemBill.nm;
+            param["Cn"] = iemBill.Cn;
+            param["unit"] = round(iemBill.CALC[bill_month].unit * 100.0) / 100.0;
+            param["tariff"] = iemBill.tariff;
+            param["enrg"] = iemBill.enrg;
+            param["fix"] = iemBill.fix;
+            param["tax"] = iemBill.tax;
+            param["total"] = iemBill.CALC[bill_month].total;
+            break;
+        }
+        default: {
+            Serial.println("Unknown publish type");
+            break;
+        }
     }
 
     Serial.println("Publishing data to MQTT:[" + doc.as<String>() + "]");

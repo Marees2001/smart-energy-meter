@@ -121,6 +121,7 @@ void loop() {
     adc_read_voltages(); // Read voltages to check if the relay operation was triggered by an overvoltage or undervoltage condition
     digitalWrite(RELAY1_PIN, iemOpt.rl1_opt ? HIGH : LOW);
     publish_data = STATUS_UPDATE; // Trigger status update after relay state change
+    Serial.println("Relay 1 triggered");
   }
   /*function for control relay2 from manual input*/
   if(iemOpt.rl2_opt != iemSta.rl2_status) {
@@ -129,6 +130,7 @@ void loop() {
     adc_read_voltages(); // Read voltages to check if the relay operation was triggered by an overvoltage or undervoltage condition
     digitalWrite(RELAY2_PIN, iemOpt.rl2_opt ? HIGH : LOW);
     publish_data = STATUS_UPDATE; // Trigger status update after relay state change
+    Serial.println("Relay 2 triggered");
   }
   /*function for control relay3 from manual input*/
   if(iemOpt.rl3_opt != iemSta.rl3_status) {
@@ -137,6 +139,7 @@ void loop() {
     adc_read_voltages(); // Read voltages to check if the relay operation was triggered
     digitalWrite(RELAY3_PIN, iemOpt.rl3_opt ? HIGH : LOW);
     publish_data = STATUS_UPDATE; // Trigger status update after relay state change
+    Serial.println("Relay 3 triggered");
   }
 
   /* ---------------------------------------------------------------
@@ -202,6 +205,7 @@ void loop() {
   /*Function to publish status updates*/
   if(millis() > status_publish_timeout + 30000L) { // Publish status update every 30 seconds
     status_publish_timeout = millis();
+    Serial.println("status_publish_timeout:"+String(status_publish_timeout));
     publish_data = STATUS_UPDATE;
   }
   
