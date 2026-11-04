@@ -29,10 +29,10 @@
 #define DEFAULT_WIFI_STA_SSID "realme_swarna"
 #define DEFAULT_WIFI_STA_PASSWORD "yatf6856"
 // MQTT and WiFi configuration
-#define MQTT_BROKER "8c0734829583414dba307feccb737cf7.s1.eu.hivemq.cloud"
+#define MQTT_BROKER ""
 #define MQTT_PORT 8883
-#define MQTT_USERNAME "Marees"
-#define MQTT_PASSWORD "Marees2001"
+#define MQTT_USERNAME ""
+#define MQTT_PASSWORD ""
 #define MQTT_TOPIC "meter/status"
 #define MQTT_SUBSCRIBE "meter/command"
 // WiFi configuration
